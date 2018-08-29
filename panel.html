@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    const CONFIG = {
+      intervalWait: 8000,
+    }
+  
+  
+  </script>
+  <style>
+    body {
+      height: 100%;
+      margin: 0;
+      background: #25689575;
+      font-size: 16px;
+    }
+    #panel {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+    }
+    #search {
+      width: 90%;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 10px;
+    }
+    #search input {
+      width: calc(100% - .8rem);
+      border-radius: .2rem;
+      border: none;
+      padding: .4rem;
+    }
+    #loading-spinner {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    #object-types-container {
+      margin-top: .6rem;
+    }
+    .metric-container.hide-children  .metrics {
+      display: none;
+    }
+    .metric-container {
+      margin: .1rem 0 0 0;
+      cursor: pointer;
+    }
+    .metric-main {
+      padding: .4rem;
+    }
+    .metric {
+      padding: .2rem .8rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: .8rem;
+    }
+    .metric > div {
+      line-height: 1.3;
+    }
+    .metric-main.metrics-hidden ~ .metric {
+      display: none;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+  
+  
+</head>
+<body id="body">
+  <div id="panel">
+    <div id="loading-spinner">
+      <!-- base64 loading spinner -->
+      <img src="data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjAiIHdpZHRoPSI2NHB4IiBoZWlnaHQ9IjY0cHgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoMTM1IDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiNiZWJlYmUiIHRyYW5zZm9ybT0icm90YXRlKDE4MCA2NCA2NCkiLz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjOTc5Nzk3IiB0cmFuc2Zvcm09InJvdGF0ZSgyMjUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iIzZlNmU2ZSIgdHJhbnNmb3JtPSJyb3RhdGUoMjcwIDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiMzYzNjM2MiIHRyYW5zZm9ybT0icm90YXRlKDMxNSA2NCA2NCkiLz48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgdmFsdWVzPSIwIDY0IDY0OzQ1IDY0IDY0OzkwIDY0IDY0OzEzNSA2NCA2NDsxODAgNjQgNjQ7MjI1IDY0IDY0OzI3MCA2NCA2NDszMTUgNjQgNjQiIGNhbGNNb2RlPSJkaXNjcmV0ZSIgZHVyPSI3MjBtcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiPjwvYW5pbWF0ZVRyYW5zZm9ybT48L2c+PGc+PGNpcmNsZSBmaWxsPSIjMDAwIiBjeD0iNjMuNjYiIGN5PSI2My4xNiIgcj0iMTIiLz48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjcyMG1zIiBiZWdpbj0iMHMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxOzA7MSIvPjwvZz48L3N2Zz4=" />
+    </div>
+    <!-- place error messages in here -->
+    <div id="errors">
+      
+    </div>
+    <div id="search">
+      <input type="text" oninput="searchIt(this)" placeholder="Search..." />
+    </div>
+    <div id="object-types-container">
+
+    </div>
+    <div id="map-player">
+
+    </div>
+  </div>
+
+
+
+
+  <script>
+    let { frameElement: { contentWindow : { parent = {} } = {} } = {} } = window;
+    let objectType = "";
+    let oldObjectType = "";
+    let objects = [];
+    let metrics = {};
+    let bgColor = "";
+    let color = "";
+    
+
+    // search bar
+    function searchIt(event = {}) {
+      let { value = "" } = event;
+      let els = document.getElementsByClassName('metric-container');
+      for (let i = 0; i < els.length; i++) {
+        let passesTest = els[i].dataset.id.toLowerCase().indexOf(value.toLowerCase()) > -1 ? true : false;
+        if (!passesTest) {
+          els[i].classList.add('hidden');
+        } else {
+          els[i].classList.remove('hidden');
+        }
+      }
+    }
+
+
+    // remove hidden from metric-container 
+    function showMetricContainer(el, event) {
+      event.stopPropagation();
+      // let els = document.getElementsByClassName('metric-container');
+      // for (let i = 0; i < els.length; i++) {
+      //   if (el === els[i]) {
+      //     continue;
+      //   }
+      //   els[i].classList.add('hide-children');
+      // }
+      el.parentElement.classList.toggle('hide-children');
+    }
+
+
+    // listen for object type event
+    parent.document.addEventListener('panel-button-fire', function(evt = {}) {
+      let { detail = {} } = evt;
+      // if already the selected objectType, just return
+      if (detail.objectType == objectType) return;
+      oldObjectType = objectType;
+      objectType = detail.objectType;
+      // get all objects for that objectType
+      // get metrics from current metrics object if already exists, 
+      // otherwise go get the metrics
+      insertHtml('object-types-container', '');
+      toggleLoadingSpinner(true);
+      if (metrics[objectType]) {
+        compareMetrics(metrics[objectType], metrics[objectType], objectType)
+      } else {
+        getObjectsByType(detail.objectType); 
+      }
+      bgColor = detail.backgroundColor;
+      color = detail.color;
+      // insertHtml('object-types-container', "");
+      changeColors(bgColor, color);
+    });
+
+
+    function changeColors(bgColor, fontColor) {
+      let bodyEl = document.getElementById('body');
+      bodyEl.style.backgroundColor = bgColor;
+      bodyEl.style.color = fontColor;
+    }
+    
+
+    function changeMetricMainColor() {
+      return bgColor.substring(0, 7) + 85;
+    }
+
+    // get objects by object type
+    function getObjectsByType(ObjectTypeName = null) {
+      if (!ObjectTypeName) return null;
+      let objectTypeList = parent.n.call('object.list.by.type', {}, (err, res = {}) => {
+        if (err) {
+          return createError("Failed to retrieve the object list by type. Please try reselecting the object type button.");
+        }
+        // just get the object names and store in an array
+        objects = Object.keys(res.body ? res.body[ObjectTypeName] : {});
+        // get the metrics for the list of objects
+        getObjectMetrics(objects, ObjectTypeName);
+      });      
+    }
+
+
+    // get object metrics
+    function getObjectMetrics(ObjectNames = [], objectTypeName = "") {
+      parent.n.call('metric.history', { ObjectName: ObjectNames, Begin: 1, End: Date.now(), Limit: 1 }, (err, res = {}) => {
+        if (err) {
+          return createError("Failed to retrieve object metrics. Please try reselecting the object type button.");
+        }
+        // if the user has clicked to another objectType, just cancel the request
+        if (objectType !== objectTypeName) return;
+        compareMetrics(metrics[objectType], res.body, objectTypeName);
+      });
+    }
+
+
+    // compare metrics and create a new metrics html section
+    // and attach it in place of the old html
+    function compareMetrics(oldMetrics = {}, newMetrics = {}, objectTypeName = "") {
+      let previousKey = "";
+      let doNotInsert = true;
+      let html = "";
+      let objectNameKeys = Object.keys(newMetrics);
+      objectNameKeys.sort();
+      for (let key of objectNameKeys) {
+        let newMetricsTimestamp = Object.keys(newMetrics[key]);
+        let oldMetricsTimestamp = [];
+        if (newMetricsTimestamp.length === 0) continue;
+        if (oldMetrics[key]) {
+          oldMetricsTimestamp = Object.keys(oldMetrics[key]);
+        }
+        if (oldObjectType != objectType) {
+          html += createObjectListHtml(newMetrics[key][newMetricsTimestamp[newMetricsTimestamp.length - 1]])
+          continue;
+        }
+        // if the metrics are the same, only change that metric container
+        if (newMetricsTimestamp[newMetricsTimestamp.length - 1] !== oldMetricsTimestamp[oldMetricsTimestamp.length - 1]) {
+          html = createObjectListHtml(newMetrics[key][newMetricsTimestamp[newMetricsTimestamp.length - 1]])
+          // if the element already exists, insert into existing dom element
+          // else if it doesn't append after previousKey, so we retain the order
+          let currentEl = document.getElementById(key);
+          if (currentEl) {
+            insertOuterHtml(key, html);
+            if (!currentEl.classList.contains('hide-children')) {
+              currentEl = document.getElementById(key);
+              currentEl.classList.remove('hide-children');
+            }
+          } else {
+            let el = document.getElementById(previousKey);
+            if (el) {
+              el.insertAdjacentHTML('afterend', html);
+            }
+          }
+        }
+        doNotInsert = false;
+        previousKey = Object.keys(newMetrics[key]).length > 0 ? key : previousKey;
+      }
+      if (doNotInsert) {
+        insertHtml('object-types-container', html);
+      }
+      oldObjectType = objectTypeName;
+      metrics[objectType] = newMetrics;
+    }
+
+
+    // object type list html
+    function createObjectListHtml(data = {}) {
+      let html = "";
+      let { value = {} } = data;
+      let mainColor = changeMetricMainColor();
+      html += `<div id="${data.objectinfo.name}" class="metric-container hide-children" data-id="${data.objectinfo.name.toLowerCase()}">`
+        html += createMetricsHtml(value, data.objectinfo.name, data.health, mainColor);
+      html += `</div>`;
+      return html;
+    }
+
+
+    // object metrics html
+    function createMetricsHtml(values = {}, objectName = "", health = "", mainColor) {
+      let html = `
+        <div class="metric-main" style="background: ${mainColor};" onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)">
+          <div class="metric-object-name">${objectName}</div>
+          <div class="metric-health">${health}</div>
+        </div>
+        <div class="metrics">
+      `;
+          for (let key in values) {
+            let isImage = /(http(s?):)|([/|.|\w|\s])*\.(?:jpg|gif|png)/.test(String(values[key]));
+            html += `
+              <div class="metric" data-metric-name="${key}" data-metric-value="${values[key]}" data-id="${objectName}" onclick="var event = arguments[0] || window.event; getWeekHistory(this, event)" style="display: ${isImage ? "block" : "flex"}; ${isImage ? 'text-align: center' : ''}">`
+                // if it's an image use the image
+                if (isImage) {
+                  html += `<div>${key}</div><img src="${values[key]}" style="max-width: 100%" />`
+                } else {
+                  html += `
+                    <div>${key}</div>
+                    <div>${values[key]}</div>`
+                }
+            html += `</div>`
+          }
+      html += `</div>`;
+      return html;
+    }
+
+
+    function getWeekHistory(el = {}, event = {}) {
+      event.stopPropagation();
+      let objectName = event.currentTarget.dataset.id;
+      let metricValue = event.currentTarget.dataset.metricValue;
+      let metricKey = event.currentTarget.dataset.metricName;
+      if (isNaN(+metricValue) || (String(metricKey).toLowerCase() === "latitude" || String(metricKey).toLowerCase() === "longitude")) {
+        return;
+      }
+      
+      parent.n.call('metric.history', { objectName, begin: Date.now() - 604800000, end: Date.now(), limit: 500 }, (err, res) => {
+        if (err) {
+          console.log(err);
+        }
+        // TODO: create a graph here ***********************************
+        console.log(res.body);
+      });
+    }
+
+
+    // if there's an error, show in panel
+    function createError(message) {
+      let el = document.getElementById('errors');
+      let html = `<div>${message}</div>`;
+      insertHtml(el, html);
+    }
+
+
+    // attach html
+    function insertHtml(elementId = "", html = "") {
+      toggleLoadingSpinner(false);
+      let el = document.getElementById(elementId);
+      el.innerHTML = html;
+    }
+
+    // attach html
+    function insertOuterHtml(elementId = "", html = "") {
+      toggleLoadingSpinner(false);
+      let el = document.getElementById(elementId);
+      el.outerHTML = html;
+    }
+
+    // append html
+    function appendHtml(elementId = "", html = "") {
+      toggleLoadingSpinner(false);
+      let el = document.getElementById(elementId);
+      el.innerHTML += html;
+    }
+
+    function toggleLoadingSpinner(on = false) {
+      let el = document.getElementById('loading-spinner');
+      if (on === false) {
+        el.classList.add('hidden');
+      } else {
+        el.classList.remove('hidden');
+      }
+    }
+
+
+    // kick off setInterval to getObjectsByType every n seconds
+    setInterval(function() {
+      getObjectsByType(objectType);
+    }, CONFIG.intervalWait);
+
+
+
+
+
+
+
+
+
+
+
+
+  </script>
+</body>
+</html>
