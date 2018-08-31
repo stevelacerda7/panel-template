@@ -24,6 +24,12 @@
         color: DEFAULT_COLOR,
         imagesrc: '/proxy/file/resource/big-o.png'
       },
+      {
+        objectnames: 'marker8,marker7', // no spaces
+        backgroundcolor: DEFAULT_BG_COLOR,
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png'
+      },
     ]
   </script>
 
@@ -72,17 +78,19 @@
     // use config to place buttons in DOM
     let buttonsHtml = "";
     for (let i = 0; i < CONFIG.length; i++) {
+      buttonsHtml += `<div class="image ${i === 0 ? 'selected' : ''}" ` 
+      for (let key in CONFIG[i]) {
+        buttonsHtml += `
+          data-${key}="${CONFIG[i][key]}"
+        ` 
+      }
       buttonsHtml += `
-        <div 
-          class="image ${i === 0 ? 'selected' : ''}" 
-          data-objectType="${CONFIG[i].objecttype}" 
-          data-backgroundColor="${CONFIG[i].backgroundcolor || '#25689575'}" 
-          data-color="${CONFIG[i].color || '#ffffff' }"
         >
           <span>
             <img src="${CONFIG[i].imagesrc}" />
           </span>
-        </div>`
+        </div>
+      `
     }
     // all buttonsHtml to DOM
     let imageButtonsContainerEl = document.getElementById('image-buttons-container');
@@ -104,23 +112,19 @@
         this.classList.add('selected');
         // fire an event for all listeners with information regarding
         // objecttype and other params
-        fireEvent({ 
-          objecttype: evt.currentTarget.dataset.objecttype, 
-          backgroundcolor: evt.currentTarget.dataset.backgroundcolor,
-          color: evt.currentTarget.dataset.color  
-        })
+        let obj = {}
+        for (let key in evt.currentTarget.dataset) {
+          obj[key] = evt.currentTarget.dataset[key];
+        }
+        fireEvent(obj)
       });
 
 
       // fires off an event letting everyone know which button was
       // clicked
-      function fireEvent({ objecttype, backgroundcolor, color}) {
+      function fireEvent(obj) {
         let event = new CustomEvent('panel-button-fire', {
-          detail: {
-            objectType: objecttype,
-            backgroundColor: backgroundcolor,
-            color: color,
-          }
+          detail: obj
         });
         parent.document.dispatchEvent(event);    
       }

@@ -99,6 +99,8 @@
     let { frameElement: { contentWindow : { parent = {} } = {} } = {} } = window;
     let objectType = "";
     let oldObjectType = "";
+    let objectName = "";
+    let objectNames = [];
     let objects = [];
     let metrics = {};
     let bgColor = "";
@@ -123,13 +125,6 @@
     // remove hidden from metric-container 
     function showMetricContainer(el, event) {
       event.stopPropagation();
-      // let els = document.getElementsByClassName('metric-container');
-      // for (let i = 0; i < els.length; i++) {
-      //   if (el === els[i]) {
-      //     continue;
-      //   }
-      //   els[i].classList.add('hide-children');
-      // }
       el.parentElement.classList.toggle('hide-children');
     }
 
@@ -138,9 +133,14 @@
     parent.document.addEventListener('panel-button-fire', function(evt = {}) {
       let { detail = {} } = evt;
       // if already the selected objectType, just return
-      if (detail.objectType == objectType) return;
+      if (detail.objecttype == objectType) return;
       oldObjectType = objectType;
-      objectType = detail.objectType;
+      if (detail.objecttype) {
+        objectType = detail.objecttype;
+      } else if (detail.objectnames) {
+        objectType = detail.objectnames.split(',')[0];
+        objectName = detail.objectnames.split(',')[0];
+      }
       // get all objects for that objectType
       // get metrics from current metrics object if already exists, 
       // otherwise go get the metrics
@@ -148,10 +148,14 @@
       toggleLoadingSpinner(true);
       if (metrics[objectType]) {
         compareMetrics(metrics[objectType], metrics[objectType], objectType)
-      } else {
-        getObjectsByType(detail.objectType); 
+      } else if (detail.objecttype) {
+        getObjectsByType(detail.objecttype); 
+      } else if (detail.objectnames) {
+        // use first objectName as objectTypeName when using 'object1, object2' format
+        objectNames = detail.objectnames.split(',');
+        getObjectMetrics(objectNames, objectNames[0]);
       }
-      bgColor = detail.backgroundColor;
+      bgColor = detail.backgroundcolor;
       color = detail.color;
       // insertHtml('object-types-container', "");
       changeColors(bgColor, color);
@@ -346,7 +350,11 @@
 
     // kick off setInterval to getObjectsByType every n seconds
     setInterval(function() {
-      getObjectsByType(objectType);
+      if (objectName === objectType) {
+        getObjectMetrics(objectNames, objectType)
+      } else {
+        getObjectsByType(objectType);
+      }
     }, CONFIG.intervalWait);
 
 
