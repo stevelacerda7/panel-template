@@ -12,21 +12,21 @@
         backgroundcolor: '#25689575',
         color: DEFAULT_COLOR,
         imagesrc: '/proxy/file/resource/big-o.png',
-        hoverinfo: 'markers',
+        title: 'Markers',
       },
       {
         objecttype: 'obj_type_1',
         backgroundcolor: '#55685575',
         color: DEFAULT_COLOR,
         imagesrc: '/proxy/file/resource/big-o.png',
-        hoverinfo: 'type1',
+        title: 'Type1',
       },
       {
         objectnames: 'marker5,marker7', // no spaces
         backgroundcolor: '#80809575',
         color: DEFAULT_COLOR,
         imagesrc: '/proxy/file/resource/big-o.png',
-        hoverinfo: 'markers 5 & 7',
+        title: 'Markers 5 & 7',
       },
       {
         objectname: 'marker8', // no spaces
@@ -35,7 +35,7 @@
         imagesrc: '/proxy/file/resource/big-o.png',
         alerts: true,
         alertheader: 'column2',
-        // hoverinfo: 'marker 8',
+        title: 'Alerts',
       },
     ]
 
@@ -64,18 +64,6 @@
       cursor: pointer;
       height: 40px;
     }
-    .image:hover:before {
-      content: attr(data-hoverinfo);
-      display: block;
-      background: var(--hover-bg-color);
-      position: absolute;
-      color: var(--hover-color);
-      /* padding: .5rem; */
-      left: 0;
-      right: 0;
-      top: 0;
-      font-size: 0.8rem;
-    }
     #image-buttons-container img {
       max-width: 100%;
       border-radius: 50%;
@@ -87,7 +75,7 @@
       position: absolute;
       content: '';
       border: 10px solid transparent;
-      border-top: 10px solid #ffffff99;
+      border-top: 10px solid #00000098;
       left: 50%;
       transform: translateX(-50%);
       bottom: -20px;
@@ -110,7 +98,7 @@
       margin-top: 15px;
     }
     #panel {
-      height: calc(100% - 105px);
+      height: calc(100% - 150px);
       width: 100%;
       overflow: auto;
     }
@@ -157,6 +145,9 @@
       font-size: 0.7rem;
       padding: .1rem 0;
     }
+    .metric > div {
+      padding: .2rem 0;
+    }
     .timestamp {
       font-size: 0.7rem;
       margin-top: .2rem;
@@ -191,6 +182,10 @@
     <div id="search">
       <input type="text" oninput="searchIt(this)" placeholder="Search..." />
     </div>
+
+
+    <div id="title" style="padding: 0 .4rem"></div>
+
   
     <div id="panel">
       <div id="loading-spinner">
@@ -198,15 +193,9 @@
         <img src="data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjAiIHdpZHRoPSI2NHB4IiBoZWlnaHQ9IjY0cHgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoMTM1IDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiNiZWJlYmUiIHRyYW5zZm9ybT0icm90YXRlKDE4MCA2NCA2NCkiLz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjOTc5Nzk3IiB0cmFuc2Zvcm09InJvdGF0ZSgyMjUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iIzZlNmU2ZSIgdHJhbnNmb3JtPSJyb3RhdGUoMjcwIDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiMzYzNjM2MiIHRyYW5zZm9ybT0icm90YXRlKDMxNSA2NCA2NCkiLz48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgdmFsdWVzPSIwIDY0IDY0OzQ1IDY0IDY0OzkwIDY0IDY0OzEzNSA2NCA2NDsxODAgNjQgNjQ7MjI1IDY0IDY0OzI3MCA2NCA2NDszMTUgNjQgNjQiIGNhbGNNb2RlPSJkaXNjcmV0ZSIgZHVyPSI3MjBtcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiPjwvYW5pbWF0ZVRyYW5zZm9ybT48L2c+PGc+PGNpcmNsZSBmaWxsPSIjMDAwIiBjeD0iNjMuNjYiIGN5PSI2My4xNiIgcj0iMTIiLz48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjcyMG1zIiBiZWdpbj0iMHMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxOzA7MSIvPjwvZz48L3N2Zz4=" />
       </div>
       <!-- place error messages in here -->
-      <div id="errors">
-        
-      </div>
-      <div id="object-types-container">
-  
-      </div>
-      <div id="map-player">
-  
-      </div>
+      <div id="errors"></div>
+      <div id="object-types-container"></div>
+      <div id="map-player"></div>
     </div>
   </div>
 
@@ -285,10 +274,9 @@
     let objectNames = [];
     let objects = [];
     let metrics = {};
-    let bgColor = "";
-    let color = "";
     let searchValue = "";
     let configIndex = null;
+    let bgColor = "";
 
     // search bar
     function searchIt(event = {}) {
@@ -318,6 +306,8 @@
       let { detail = {} } = evt;
       // if already the selected objectType, just return
       if (detail.objecttype == objectType) return;
+      // set the oldObjectType to what is currently set as objectType because we are going to
+      // set the objectType right now
       oldObjectType = objectType;
       if (detail.objecttype) {
         objectType = detail.objecttype;
@@ -330,6 +320,8 @@
         objectNames = [detail.objectname];
         objectName = detail.objectname;
       }
+      // the button has a config index data attribute that we can use to tell where
+      // the 
       configIndex = detail.configindex;
       // get all objects for that objectType
       // get metrics from current metrics object if already exists, 
@@ -338,9 +330,12 @@
         return;
       }
       bgColor = detail.backgroundcolor;
-      color = detail.color;
-      // insertHtml('object-types-container', "");
-      changeColors(bgColor, color);
+      // change background and font color based on config
+      changeColors(bgColor, detail.color);
+      // change header/title based on headerinfo field in config
+      if (detail.title) {
+        changeTitle(detail.title, bgColor, detail.color);
+      }
       insertHtml('object-types-container', '');
       toggleLoadingSpinner(true);
       if (metrics[objectType] && metrics[objectType].singleObject) {
@@ -358,16 +353,25 @@
     });
 
 
-    function changeColors(bgColor, fontColor) {
+    function changeColors(bgColor = "#00000085", fontColor = "#ffffff") {
       let mainEl = document.getElementById('main-container');
-      mainEl.style.backgroundColor = bgColor;
+      mainEl.style.backgroundColor = changeColorShade(bgColor, 95);
       mainEl.style.color = fontColor;
     }
     
 
-    function changeMetricMainColor() {
-      return bgColor.substring(0, 7) + 85;
+    function changeColorShade(bgColor = "#00000085", adder = 85) {
+      return bgColor.substring(0, 7) + adder;
     }
+
+
+    // changes the title based on headerinfo config property
+    function changeTitle(title = "", bgColor = "#00000085", fontColor = "#ffffff") {
+      let el = document.getElementById('title');
+      el.style.backgroundColor = changeColorShade(bgColor, 98);
+      el.innerHTML = `<h2 style="margin: 4px 0; padding: 6px 0; text-transform: capitalize;">${title}</h2>`;
+    }
+
 
     // get objects by object type
     function getObjectsByType(ObjectTypeName = null) {
@@ -494,7 +498,7 @@
     function createObjectListHtml(data = {}, singleObject = false) {
       let html = "";
       let { value = {} } = data;
-      let mainColor = changeMetricMainColor();
+      let mainColor = changeColorShade(bgColor, 85);
       // need to check if searchValue is contained in name, so that we don't show if it's not
       html += `
         <div 
@@ -513,7 +517,7 @@
     function createSingleObjectListHtml(data = {}) {
       let html = "";
       let { value = {} } = data;
-      let mainColor = changeMetricMainColor();
+      let mainColor = changeColorShade(bgColor, 85);
       // need to check if searchValue is contained in name, so that we don't show if it's not
       html += `
         <div 
@@ -559,10 +563,10 @@
                 data-metric-value="${value}" 
                 data-id="${objectName}" 
                 onclick="var event = arguments[0] || window.event; getWeekHistory(this, event)" 
-                style="display: ${isImage ? "block" : "flex"}; ${isImage ? 'text-align: center' : ''}"
+                style="display: ${isImage || isVideo ? "block" : "flex"}; ${isImage || isVideo ? 'text-align: center' : ''}"
               >`
                 // if it's an image use the image
-                html += innerMetricHtml(key, value, isImage);
+                html += innerMetricHtml(key, value, isImage, isVideo);
             html += `</div>`
           }
       html += `</div>`;
@@ -599,7 +603,7 @@
                 data-metric-value="${value}" 
                 data-id="${objectName}" 
                 onclick="var event = arguments[0] || window.event; showChart(this, event)" 
-                style="display: ${isImage ? "block" : "flex"}; ${isImage ? 'text-align: center' : ''}"
+                style="display: ${isImage || isVideo ? "block" : "flex"}; ${isImage || isVideo ? 'text-align: center' : ''}"
               >`
                 // if it's an image use the image
                 html += innerMetricHtml(key, value, isImage, isVideo)
@@ -612,7 +616,7 @@
 
     // check to see if value is an image
     function valueTypeIsImage(value) {
-      let isImage = String(value).match(/\.(jpeg|jpg|gif|png)$/);
+      let isImage = /\.(jpeg|jpg|gif|png)$/.test(String(value));
       let isBase64 = /^data:image.*base64/.test(String(value));
       return isImage || isBase64;
     }
@@ -620,7 +624,7 @@
 
     // check to see if value is video
     function valueTypeIsVideo(value) {
-      return String(value).match(/\.(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/);
+      return /\.(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/.test(String(value));
     }
 
 
@@ -628,13 +632,23 @@
     function innerMetricHtml(key, value, isImage = false, isVideo = false) {
       let html = '';
       if (isImage) {
-        html += `<div>${key}</div><img src="${value}" style="max-width: 100%" />`
+        html += `
+          <div>${key}</div>
+          <img src="${value}" style="max-width: 100%" />
+        `
       } else if (isVideo) {
-        html += `<div>${key}</div><video src="${value}" style="max-width: 100%" />`
+        html += `
+          <div>${key}</div>
+          <video controls style="max-width: 100%">
+            <source src="${value}">
+            Your browser does not support this video type
+          </video>
+        `
       } else {
         html += `
           <div>${key}</div>
-          <div>${value}</div>`
+          <div>${value}</div>
+        `
       }
       return html;
     }
