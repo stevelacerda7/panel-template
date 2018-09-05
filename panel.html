@@ -1,31 +1,123 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <!-- buttons script and config -->
   <script>
-    const CONFIG = {
-      intervalWait: 8000,
+    const DEFAULT_BG_COLOR = '#25689575';
+    const DEFAULT_COLOR = '#ffffff';
+
+    const CONFIG = [
+      {
+        objecttype: 'obj_t_markers',
+        backgroundcolor: '#25689575',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png',
+        hoverinfo: 'markers',
+      },
+      {
+        objecttype: 'obj_type_1',
+        backgroundcolor: '#55685575',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png',
+        hoverinfo: 'type1',
+      },
+      {
+        objectnames: 'marker5,marker7', // no spaces
+        backgroundcolor: '#80809575',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png',
+        hoverinfo: 'markers 5 & 7',
+      },
+      {
+        objectname: 'marker8', // no spaces
+        backgroundcolor: '#98652375',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png',
+        alerts: true,
+        alertheader: 'column2',
+        // hoverinfo: 'marker 8',
+      },
+    ]
+
+    const CONFIG_SCRIPT = {
+      intervalWait: 1000, // wait time between requests to retrieve data
+      historyBuffer: 200, // number of items to retrieve in limit for metric.history
+      dateFormat: 'en-us', // javascript options
+      timeFormat: 'en-us' // javascript options
     }
-  
-  
   </script>
+  <!-- buttons style -->
+  <style>
+    :root {
+      --hover-bg-color: #25689575;
+      --hover-color: #ffffff;
+    }
+    #image-buttons-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .image {
+      flex: 1 1 5%;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      height: 40px;
+    }
+    .image:hover:before {
+      content: attr(data-hoverinfo);
+      display: block;
+      background: var(--hover-bg-color);
+      position: absolute;
+      color: var(--hover-color);
+      /* padding: .5rem; */
+      left: 0;
+      right: 0;
+      top: 0;
+      font-size: 0.8rem;
+    }
+    #image-buttons-container img {
+      max-width: 100%;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      margin-bottom: 1rem;
+    }
+    div.selected span::after {
+      position: absolute;
+      content: '';
+      border: 10px solid transparent;
+      border-top: 10px solid #ffffff99;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -20px;
+    }
+  </style>
+
+
   <style>
     body {
       height: 100%;
       margin: 0;
-      background: #25689575;
       font-size: 16px;
+      overflow: hidden;
     }
-    #panel {
+    #main-container {
       position: absolute;
+      background: #25689575;
       height: 100%;
       width: 100%;
+      margin-top: 15px;
+    }
+    #panel {
+      height: calc(100% - 105px);
+      width: 100%;
+      overflow: auto;
     }
     #search {
       width: 90%;
       display: block;
-      margin-left: auto;
-      margin-right: auto;
-      margin-top: 10px;
+      margin: 10px auto;
     }
     #search input {
       width: calc(100% - .8rem);
@@ -39,9 +131,6 @@
       left: 50%;
       transform: translateX(-50%);
     }
-    #object-types-container {
-      margin-top: .6rem;
-    }
     .metric-container.hide-children  .metrics {
       display: none;
     }
@@ -51,6 +140,26 @@
     }
     .metric-main {
       padding: .4rem;
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .metric-object-name, 
+    .metric-health {
+      padding: .2rem 0;
+    }
+    .metric-object-name {
+      flex: 0 0 75%;
+    }
+    .metric-health {
+      flex: 0 0 25%;
+    }
+    .metric-main-sub {
+      font-size: 0.7rem;
+      padding: .1rem 0;
+    }
+    .timestamp {
+      font-size: 0.7rem;
+      margin-top: .2rem;
     }
     .metric {
       padding: .2rem .8rem;
@@ -60,6 +169,10 @@
     }
     .metric > div {
       line-height: 1.3;
+    }
+    .metric.metric-image {
+      flex-direction: column;
+      align-items: center;
     }
     .metric-main.metrics-hidden ~ .metric {
       display: none;
@@ -72,27 +185,96 @@
   
 </head>
 <body id="body">
-  <div id="panel">
-    <div id="loading-spinner">
-      <!-- base64 loading spinner -->
-      <img src="data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjAiIHdpZHRoPSI2NHB4IiBoZWlnaHQ9IjY0cHgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoMTM1IDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiNiZWJlYmUiIHRyYW5zZm9ybT0icm90YXRlKDE4MCA2NCA2NCkiLz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjOTc5Nzk3IiB0cmFuc2Zvcm09InJvdGF0ZSgyMjUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iIzZlNmU2ZSIgdHJhbnNmb3JtPSJyb3RhdGUoMjcwIDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiMzYzNjM2MiIHRyYW5zZm9ybT0icm90YXRlKDMxNSA2NCA2NCkiLz48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgdmFsdWVzPSIwIDY0IDY0OzQ1IDY0IDY0OzkwIDY0IDY0OzEzNSA2NCA2NDsxODAgNjQgNjQ7MjI1IDY0IDY0OzI3MCA2NCA2NDszMTUgNjQgNjQiIGNhbGNNb2RlPSJkaXNjcmV0ZSIgZHVyPSI3MjBtcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiPjwvYW5pbWF0ZVRyYW5zZm9ybT48L2c+PGc+PGNpcmNsZSBmaWxsPSIjMDAwIiBjeD0iNjMuNjYiIGN5PSI2My4xNiIgcj0iMTIiLz48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjcyMG1zIiBiZWdpbj0iMHMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxOzA7MSIvPjwvZz48L3N2Zz4=" />
-    </div>
-    <!-- place error messages in here -->
-    <div id="errors">
-      
-    </div>
+  <div id="image-buttons-container"></div>
+  
+  <div id="main-container">
     <div id="search">
       <input type="text" oninput="searchIt(this)" placeholder="Search..." />
     </div>
-    <div id="object-types-container">
-
-    </div>
-    <div id="map-player">
-
+  
+    <div id="panel">
+      <div id="loading-spinner">
+        <!-- base64 loading spinner -->
+        <img src="data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjAiIHdpZHRoPSI2NHB4IiBoZWlnaHQ9IjY0cHgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoMTM1IDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiNiZWJlYmUiIHRyYW5zZm9ybT0icm90YXRlKDE4MCA2NCA2NCkiLz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjOTc5Nzk3IiB0cmFuc2Zvcm09InJvdGF0ZSgyMjUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iIzZlNmU2ZSIgdHJhbnNmb3JtPSJyb3RhdGUoMjcwIDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiMzYzNjM2MiIHRyYW5zZm9ybT0icm90YXRlKDMxNSA2NCA2NCkiLz48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgdmFsdWVzPSIwIDY0IDY0OzQ1IDY0IDY0OzkwIDY0IDY0OzEzNSA2NCA2NDsxODAgNjQgNjQ7MjI1IDY0IDY0OzI3MCA2NCA2NDszMTUgNjQgNjQiIGNhbGNNb2RlPSJkaXNjcmV0ZSIgZHVyPSI3MjBtcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiPjwvYW5pbWF0ZVRyYW5zZm9ybT48L2c+PGc+PGNpcmNsZSBmaWxsPSIjMDAwIiBjeD0iNjMuNjYiIGN5PSI2My4xNiIgcj0iMTIiLz48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjcyMG1zIiBiZWdpbj0iMHMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxOzA7MSIvPjwvZz48L3N2Zz4=" />
+      </div>
+      <!-- place error messages in here -->
+      <div id="errors">
+        
+      </div>
+      <div id="object-types-container">
+  
+      </div>
+      <div id="map-player">
+  
+      </div>
     </div>
   </div>
 
 
+  
+  <!-- buttons script -->
+  <script>
+    // use config to place buttons in DOM
+    let buttonsHtml = "";
+    for (let i = 0; i < CONFIG.length; i++) {
+      buttonsHtml += `<div class="image ${i === 0 ? 'selected' : ''}" data-configindex="${i}"`
+      for (let key in CONFIG[i]) {
+        buttonsHtml += `
+            data-${key}="${CONFIG[i][key]}"
+          `
+      }
+      buttonsHtml += `
+          >
+            <span>
+              <img src="${CONFIG[i].imagesrc}" />
+            </span>
+          </div>
+        `
+    }
+    // all buttonsHtml to DOM
+    let imageButtonsContainerEl = document.getElementById('image-buttons-container');
+    imageButtonsContainerEl.innerHTML = buttonsHtml;
+
+
+    // add click listener that fires an event when the objecttype button is selected
+    let imageEls = document.getElementsByClassName('image');
+    for (let i = 0; i < imageEls.length; i++) {
+      // attach event listener
+      imageEls[i].addEventListener('click', function (evt) {
+        // when clicked remove selected from all imageEls, 
+        for (let j = 0; j < imageEls.length; j++) {
+          if (imageEls[j].classList.contains('selected')) {
+            imageEls[j].classList.remove('selected');
+          }
+        }
+        // add selected to the imageEl that was selected
+        this.classList.add('selected');
+        // fire an event for all listeners with information regarding
+        // objecttype and other params
+        let obj = {}
+        for (let key in evt.currentTarget.dataset) {
+          obj[key] = evt.currentTarget.dataset[key];
+        }
+        fireEvent(obj)
+      });
+
+
+      // fires off an event letting everyone know which button was
+      // clicked
+      function fireEvent(obj) {
+        let event = new CustomEvent('panel-button-fire', {
+          detail: obj
+        });
+        document.dispatchEvent(event);
+      }
+
+      // need to fire off an event choosing the first item in config, 
+      // otherwise nothing will be shown on the initial load
+      window.onload = function () {
+        fireEvent(CONFIG[0]);
+      };
+    }
+  </script>
 
 
   <script>
@@ -105,11 +287,13 @@
     let metrics = {};
     let bgColor = "";
     let color = "";
-    
+    let searchValue = "";
+    let configIndex = null;
 
     // search bar
     function searchIt(event = {}) {
       let { value = "" } = event;
+      searchValue = value;
       let els = document.getElementsByClassName('metric-container');
       for (let i = 0; i < els.length; i++) {
         let passesTest = els[i].dataset.id.toLowerCase().indexOf(value.toLowerCase()) > -1 ? true : false;
@@ -130,7 +314,7 @@
 
 
     // listen for object type event
-    parent.document.addEventListener('panel-button-fire', function(evt = {}) {
+    document.addEventListener('panel-button-fire', function(evt = {}) {
       let { detail = {} } = evt;
       // if already the selected objectType, just return
       if (detail.objecttype == objectType) return;
@@ -138,34 +322,46 @@
       if (detail.objecttype) {
         objectType = detail.objecttype;
       } else if (detail.objectnames) {
-        objectType = detail.objectnames.split(',')[0];
-        objectName = detail.objectnames.split(',')[0];
+        objectType = detail.objectnames;
+        objectNames = detail.objectnames.split(',');
+        objectName = detail.objectnames;
+      } else if (detail.objectname) {
+        objectType = detail.objectname;
+        objectNames = [detail.objectname];
+        objectName = detail.objectname;
       }
+      configIndex = detail.configindex;
       // get all objects for that objectType
       // get metrics from current metrics object if already exists, 
       // otherwise go get the metrics
-      insertHtml('object-types-container', '');
-      toggleLoadingSpinner(true);
-      if (metrics[objectType]) {
-        compareMetrics(metrics[objectType], metrics[objectType], objectType)
-      } else if (detail.objecttype) {
-        getObjectsByType(detail.objecttype); 
-      } else if (detail.objectnames) {
-        // use first objectName as objectTypeName when using 'object1, object2' format
-        objectNames = detail.objectnames.split(',');
-        getObjectMetrics(objectNames, objectNames[0]);
+      if (objectType === oldObjectType) {
+        return;
       }
       bgColor = detail.backgroundcolor;
       color = detail.color;
       // insertHtml('object-types-container', "");
       changeColors(bgColor, color);
+      insertHtml('object-types-container', '');
+      toggleLoadingSpinner(true);
+      if (metrics[objectType] && metrics[objectType].singleObject) {
+        compareMetrics(metrics[objectType], metrics[objectType], objectType, true);
+      } else if (metrics[objectType]) {
+        compareMetrics(metrics[objectType], metrics[objectType], objectType);
+      } else if (detail.objecttype) {
+        getObjectsByType(detail.objecttype); 
+      } else if (detail.objectnames) {
+        // use first objectName as objectTypeName when using 'object1, object2' format
+        getObjectMetrics(objectNames, objectType);
+      } else if (detail.objectname) {
+        getObjectMetrics(objectNames, objectType, CONFIG_SCRIPT.historyBuffer);
+      }
     });
 
 
     function changeColors(bgColor, fontColor) {
-      let bodyEl = document.getElementById('body');
-      bodyEl.style.backgroundColor = bgColor;
-      bodyEl.style.color = fontColor;
+      let mainEl = document.getElementById('main-container');
+      mainEl.style.backgroundColor = bgColor;
+      mainEl.style.color = fontColor;
     }
     
 
@@ -176,12 +372,14 @@
     // get objects by object type
     function getObjectsByType(ObjectTypeName = null) {
       if (!ObjectTypeName) return null;
-      let objectTypeList = parent.n.call('object.list.by.type', {}, (err, res = {}) => {
+      let objectTypeList = parent.n.call('object.list', { query: { ObjectTypeName } }, (err, res = {}) => {
         if (err) {
           return createError("Failed to retrieve the object list by type. Please try reselecting the object type button.");
         }
         // just get the object names and store in an array
-        objects = Object.keys(res.body ? res.body[ObjectTypeName] : {});
+        objects = res.body.map(obj => {
+          return obj.Name;
+        });
         // get the metrics for the list of objects
         getObjectMetrics(objects, ObjectTypeName);
       });      
@@ -189,24 +387,34 @@
 
 
     // get object metrics
-    function getObjectMetrics(ObjectNames = [], objectTypeName = "") {
-      parent.n.call('metric.history', { ObjectName: ObjectNames, Begin: 1, End: Date.now(), Limit: 1 }, (err, res = {}) => {
+    function getObjectMetrics(ObjectNames = [], objectTypeName = "", limit = 1) {
+      let objType = objectType;
+      parent.n.call('metric.history', { ObjectName: ObjectNames, Begin: 1, End: Date.now(), Limit: limit }, (err, res = {}) => {
         if (err) {
           return createError("Failed to retrieve object metrics. Please try reselecting the object type button.");
         }
         // if the user has clicked to another objectType, just cancel the request
-        if (objectType !== objectTypeName) return;
-        compareMetrics(metrics[objectType], res.body, objectTypeName);
+        if (objType !== objectTypeName) return;
+        if (limit === 1) {
+          compareMetrics(metrics[objectTypeName], res.body, objectTypeName);
+        } else {
+          compareMetrics(metrics[objectTypeName], res.body, objectTypeName, true);
+        }
       });
     }
 
 
     // compare metrics and create a new metrics html section
     // and attach it in place of the old html
-    function compareMetrics(oldMetrics = {}, newMetrics = {}, objectTypeName = "") {
+    function compareMetrics(oldMetrics = {}, newMetrics = {}, objectTypeName = "", singleObject = false) {
       let previousKey = "";
+      let previousTimestamp = "";
       let doNotInsert = true;
       let html = "";
+      metrics[objectTypeName] = newMetrics;
+      if (singleObject && metrics[objectTypeName]) {
+        metrics[objectTypeName].singleObject = true;
+      }
       let objectNameKeys = Object.keys(newMetrics);
       objectNameKeys.sort();
       for (let key of objectNameKeys) {
@@ -216,12 +424,42 @@
         if (oldMetrics[key]) {
           oldMetricsTimestamp = Object.keys(oldMetrics[key]);
         }
-        if (oldObjectType != objectType) {
-          html += createObjectListHtml(newMetrics[key][newMetricsTimestamp[newMetricsTimestamp.length - 1]])
+        if (objectType !== objectTypeName) return;
+        // if we're looking at a single object, then we need the history for that single object, 
+        // not just the last metric
+        if (singleObject) {
+          for (let i = newMetricsTimestamp.length - 1; i >= 0; i--) {
+            let timestamp = newMetricsTimestamp[i];
+            if (timestamp === "singleObject") continue;
+            if (oldObjectType != objectTypeName) {
+              html += createSingleObjectListHtml(newMetrics[key][timestamp])
+              continue;
+            }
+            // if the metrics are the same, only change that metric container
+            html = createSingleObjectListHtml(newMetrics[key][timestamp])
+            // if the element already exists, insert into existing dom element
+            // else if it doesn't append after previousKey, so we retain the order
+            let currentEl = document.getElementById(timestamp);
+            if (currentEl) {
+              insertOuterHtml(timestamp, html);
+              if (!currentEl.classList.contains('hide-children')) {
+                currentEl = document.getElementById(timestamp);
+                currentEl.classList.remove('hide-children');
+              }
+            } else {
+              let el = document.getElementById('object-types-container');
+              el.innerHTML = html + el.innerHTML;
+            }
+            doNotInsert = false;
+            previousTimestamp = timestamp;
+          }
           continue;
         }
-        // if the metrics are the same, only change that metric container
-        if (newMetricsTimestamp[newMetricsTimestamp.length - 1] !== oldMetricsTimestamp[oldMetricsTimestamp.length - 1]) {
+        if (oldObjectType != objectTypeName) {
+          html += createObjectListHtml(newMetrics[key][newMetricsTimestamp[newMetricsTimestamp.length - 1]])
+          continue;
+        } else if (newMetricsTimestamp[newMetricsTimestamp.length - 1] !== oldMetricsTimestamp[oldMetricsTimestamp.length - 1]) {
+          // if the metrics are the same, only change that metric container
           html = createObjectListHtml(newMetrics[key][newMetricsTimestamp[newMetricsTimestamp.length - 1]])
           // if the element already exists, insert into existing dom element
           // else if it doesn't append after previousKey, so we retain the order
@@ -242,21 +480,49 @@
         doNotInsert = false;
         previousKey = Object.keys(newMetrics[key]).length > 0 ? key : previousKey;
       }
+      oldObjectType = objectTypeName;
       if (doNotInsert) {
         insertHtml('object-types-container', html);
       }
-      oldObjectType = objectTypeName;
-      metrics[objectType] = newMetrics;
+      // setTimeout(() => {
+      //   startSetInterval();
+      // }, CONFIG_SCRIPT.intervalWait)
     }
 
 
     // object type list html
-    function createObjectListHtml(data = {}) {
+    function createObjectListHtml(data = {}, singleObject = false) {
       let html = "";
       let { value = {} } = data;
       let mainColor = changeMetricMainColor();
-      html += `<div id="${data.objectinfo.name}" class="metric-container hide-children" data-id="${data.objectinfo.name.toLowerCase()}">`
+      // need to check if searchValue is contained in name, so that we don't show if it's not
+      html += `
+        <div 
+          id="${data.objectinfo.name}" 
+          class="metric-container hide-children ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}" 
+          data-id="${data.objectinfo.name.toLowerCase()}"
+        >
+      `
         html += createMetricsHtml(value, data.objectinfo.name, data.health, mainColor);
+      html += `</div>`;
+      return html;
+    }
+
+    
+    // object type list html for a single object
+    function createSingleObjectListHtml(data = {}) {
+      let html = "";
+      let { value = {} } = data;
+      let mainColor = changeMetricMainColor();
+      // need to check if searchValue is contained in name, so that we don't show if it's not
+      html += `
+        <div 
+          id="${data.meta.timestamp}" 
+          class="metric-container hide-children ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}" 
+          data-id="${data.objectinfo.name.toLowerCase()}"
+        >
+      `
+        html += createSingleMetricsHtml(value, data.meta ? data.meta.timestamp : data.objectinfo.name, data.health, mainColor);
       html += `</div>`;
       return html;
     }
@@ -265,29 +531,114 @@
     // object metrics html
     function createMetricsHtml(values = {}, objectName = "", health = "", mainColor) {
       let html = `
-        <div class="metric-main" style="background: ${mainColor};" onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)">
+        <div 
+          class="metric-main" 
+          style="background: ${mainColor};" 
+          onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
+        >
           <div class="metric-object-name">${objectName}</div>
-          <div class="metric-health">${health}</div>
-        </div>
-        <div class="metrics">
-      `;
-          for (let key in values) {
-            let isImage = /(http(s?):)|([/|.|\w|\s])*\.(?:jpg|gif|png)/.test(String(values[key]));
+          <div class="metric-health">${health}</div>`
+          if (values["latitude"] && values["longitude"] || values["Latitude"] && values["Longitude"]) {
             html += `
-              <div class="metric" data-metric-name="${key}" data-metric-value="${values[key]}" data-id="${objectName}" onclick="var event = arguments[0] || window.event; getWeekHistory(this, event)" style="display: ${isImage ? "block" : "flex"}; ${isImage ? 'text-align: center' : ''}">`
+              <div class="metric-main-sub"> 
+                <div class="coordinates">Latitude: ${values["latitude"] || values["Latitude"]}</div>
+                <div class="coordinates">Longitude: ${values["longitude"] || values["Longitude"]}</div>
+              </div>`
+          }
+        html += `</div>`;
+        html += `<div class="metrics">`;
+          for (let key in values) {
+            if (key.toLowerCase() === "latitude" || key.toLowerCase() === "longitude") continue;
+            let value = values[key];
+            let isImage = valueTypeIsImage(value);
+            let isVideo = !isImage ? valueTypeIsVideo(value) : false;
+            html += `
+              <div 
+                class="metric ${isImage ? 'metric-image' : ''}" 
+                data-metric-name="${key}" 
+                data-metric-value="${value}" 
+                data-id="${objectName}" 
+                onclick="var event = arguments[0] || window.event; getWeekHistory(this, event)" 
+                style="display: ${isImage ? "block" : "flex"}; ${isImage ? 'text-align: center' : ''}"
+              >`
                 // if it's an image use the image
-                if (isImage) {
-                  html += `<div>${key}</div><img src="${values[key]}" style="max-width: 100%" />`
-                } else {
-                  html += `
-                    <div>${key}</div>
-                    <div>${values[key]}</div>`
-                }
+                html += innerMetricHtml(key, value, isImage);
             html += `</div>`
           }
       html += `</div>`;
       return html;
     }
+
+
+    // create metrics for a single object
+    function createSingleMetricsHtml(values = {}, time, health = "", mainColor) {
+      let date = new Date(time);
+      let alertHeader = CONFIG[configIndex].alertheader;
+      let html = `
+        <div 
+          class="metric-main" 
+          style="background: ${mainColor};" 
+          onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
+        >
+          <div class="metric-object-name">
+            ${alertHeader ? '<span>' + values[alertHeader] + '</span>' : ''}
+          </div>
+          <div class="metric-health">${health}</div>
+          <span class="timestamp">${date.toLocaleDateString(CONFIG_SCRIPT.dateFormat)} ${date.toLocaleTimeString(CONFIG_SCRIPT.timeFormat)}</span>
+        </div>
+        <div class="metrics">
+      `;
+          for (let key in values) {
+            let value = values[key];
+            let isImage = valueTypeIsImage(value);
+            let isVideo = !isImage ? valueTypeIsVideo(value) : false;
+            html += `
+              <div 
+                class="metric ${isImage ? 'metric-image' : ''}" 
+                data-metric-name="${key}" 
+                data-metric-value="${value}" 
+                data-id="${objectName}" 
+                onclick="var event = arguments[0] || window.event; showChart(this, event)" 
+                style="display: ${isImage ? "block" : "flex"}; ${isImage ? 'text-align: center' : ''}"
+              >`
+                // if it's an image use the image
+                html += innerMetricHtml(key, value, isImage, isVideo)
+            html += `</div>`
+          }
+      html += `</div>`;
+      return html;
+    }
+
+
+    // check to see if value is an image
+    function valueTypeIsImage(value) {
+      let isImage = String(value).match(/\.(jpeg|jpg|gif|png)$/);
+      let isBase64 = /^data:image.*base64/.test(String(value));
+      return isImage || isBase64;
+    }
+
+
+    // check to see if value is video
+    function valueTypeIsVideo(value) {
+      return String(value).match(/\.(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/);
+    }
+
+
+    // check if is image and return proper html
+    function innerMetricHtml(key, value, isImage = false, isVideo = false) {
+      let html = '';
+      if (isImage) {
+        html += `<div>${key}</div><img src="${value}" style="max-width: 100%" />`
+      } else if (isVideo) {
+        html += `<div>${key}</div><video src="${value}" style="max-width: 100%" />`
+      } else {
+        html += `
+          <div>${key}</div>
+          <div>${value}</div>`
+      }
+      return html;
+    }
+
 
 
     function getWeekHistory(el = {}, event = {}) {
@@ -299,13 +650,19 @@
         return;
       }
       
-      parent.n.call('metric.history', { objectName, begin: Date.now() - 604800000, end: Date.now(), limit: 500 }, (err, res) => {
+      parent.n.call('metric.history', { objectName, begin: Date.now() - 604800000, end: Date.now(), limit: CONFIG_SCRIPT.historyBuffer }, (err, res) => {
         if (err) {
           console.log(err);
         }
         // TODO: create a graph here ***********************************
         console.log(res.body);
       });
+    }
+
+
+    // show chart based on data received
+    function showChart(data) {
+      // TODO: chart
     }
 
 
@@ -324,6 +681,7 @@
       el.innerHTML = html;
     }
 
+
     // attach html
     function insertOuterHtml(elementId = "", html = "") {
       toggleLoadingSpinner(false);
@@ -331,12 +689,14 @@
       el.outerHTML = html;
     }
 
+
     // append html
     function appendHtml(elementId = "", html = "") {
       toggleLoadingSpinner(false);
       let el = document.getElementById(elementId);
       el.innerHTML += html;
     }
+
 
     function toggleLoadingSpinner(on = false) {
       let el = document.getElementById('loading-spinner');
@@ -349,21 +709,15 @@
 
 
     // kick off setInterval to getObjectsByType every n seconds
-    setInterval(function() {
-      if (objectName === objectType) {
+    function startSetInterval() {
+      if (objectName === objectType && objectNames.length > 1) {
         getObjectMetrics(objectNames, objectType)
+      } else if (objectName === objectType) {
+        getObjectMetrics(objectNames, objectType, CONFIG_SCRIPT.historyBuffer)
       } else {
         getObjectsByType(objectType);
       }
-    }, CONFIG.intervalWait);
-
-
-
-
-
-
-
-
+    }
 
 
 
