@@ -5,6 +5,8 @@
   <script>
     const DEFAULT_BG_COLOR = '#25689575';
     const DEFAULT_COLOR = '#ffffff';
+    const TRENDS_DEFAULT_BG_COLOR = '#ff00005c';
+    const TRENDS_DEFAULT_COLOR = '#ffffff';
 
     const CONFIG = [
       {
@@ -13,6 +15,12 @@
         color: DEFAULT_COLOR,
         imagesrc: '/proxy/file/resource/big-o.png',
         title: 'Markers',
+        trends: [
+          { type: 'line', metric: 'column1' },
+          { type: 'bar', metric: 'column1' },
+        ],
+        trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
+        trendscolor: TRENDS_DEFAULT_COLOR,
       },
       {
         objecttype: 'obj_type_1',
@@ -89,6 +97,8 @@
       margin: 0;
       font-size: 16px;
       overflow: hidden;
+      font-family: Arial, Tahoma;
+      line-height: 1.5;
     }
     #main-container {
       position: absolute;
@@ -130,8 +140,9 @@
       padding: .4rem;
       display: flex;
       flex-wrap: wrap;
+      word-break: break-all;
     }
-    .metric-object-name, 
+    .metric-object-name,
     .metric-health {
       padding: .2rem 0;
     }
@@ -141,9 +152,14 @@
     .metric-health {
       flex: 0 0 25%;
     }
+    .metric-trend {
+      text-align: center;
+      margin-top: .2rem;
+      padding: 0.3rem;
+    }
     .metric-main-sub {
       font-size: 0.7rem;
-      padding: .1rem 0;
+      padding: .1rem .4rem;
     }
     .metric > div {
       padding: .2rem 0;
@@ -153,10 +169,11 @@
       margin-top: .2rem;
     }
     .metric {
-      padding: .2rem .8rem;
+      padding: 0 .8rem;
       display: flex;
       justify-content: space-between;
       font-size: .8rem;
+      position: relative;
     }
     .metric > div {
       line-height: 1.3;
@@ -168,16 +185,25 @@
     .metric-main.metrics-hidden ~ .metric {
       display: none;
     }
+    .metric .click-to-load {
+      right: 0;
+      position: absolute;
+      top: 50%;
+      left: 0;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
     .hidden {
       display: none;
     }
   </style>
-  
-  
+
+
 </head>
 <body id="body">
   <div id="image-buttons-container"></div>
-  
+
   <div id="main-container">
     <div id="search">
       <input type="text" oninput="searchIt(this)" placeholder="Search..." />
@@ -186,7 +212,7 @@
 
     <div id="title" style="padding: 0 .4rem"></div>
 
-  
+
     <div id="panel">
       <div id="loading-spinner">
         <!-- base64 loading spinner -->
@@ -200,7 +226,7 @@
   </div>
 
 
-  
+
   <!-- buttons script -->
   <script>
     // use config to place buttons in DOM
@@ -230,7 +256,7 @@
     for (let i = 0; i < imageEls.length; i++) {
       // attach event listener
       imageEls[i].addEventListener('click', function (evt) {
-        // when clicked remove selected from all imageEls, 
+        // when clicked remove selected from all imageEls,
         for (let j = 0; j < imageEls.length; j++) {
           if (imageEls[j].classList.contains('selected')) {
             imageEls[j].classList.remove('selected');
@@ -246,26 +272,28 @@
         }
         fireEvent(obj)
       });
-
-
-      // fires off an event letting everyone know which button was
-      // clicked
-      function fireEvent(obj) {
-        let event = new CustomEvent('panel-button-fire', {
-          detail: obj
-        });
-        document.dispatchEvent(event);
-      }
-
-      // need to fire off an event choosing the first item in config, 
-      // otherwise nothing will be shown on the initial load
-      window.onload = function () {
-        fireEvent(CONFIG[0]);
-      };
     }
+
+
+    // fires off an event letting everyone know which button was
+    // clicked
+    function fireEvent(obj) {
+      let event = new CustomEvent('panel-button-fire', {
+        detail: obj
+      });
+      document.dispatchEvent(event);
+    }
+
+    // need to fire off an event choosing the first item in config,
+    // otherwise nothing will be shown on the initial load
+    window.onload = function () {
+      imageEls[0].click();
+    };
   </script>
 
 
+
+  <!-- panel body script -->
   <script>
     let { frameElement: { contentWindow : { parent = {} } = {} } = {} } = window;
     let objectType = "";
@@ -294,7 +322,7 @@
     }
 
 
-    // remove hidden from metric-container 
+    // remove hidden from metric-container
     function showMetricContainer(el, event) {
       event.stopPropagation();
       el.parentElement.classList.toggle('hide-children');
@@ -321,10 +349,10 @@
         objectName = detail.objectname;
       }
       // the button has a config index data attribute that we can use to tell where
-      // the 
+      // the
       configIndex = detail.configindex;
       // get all objects for that objectType
-      // get metrics from current metrics object if already exists, 
+      // get metrics from current metrics object if already exists,
       // otherwise go get the metrics
       if (objectType === oldObjectType) {
         return;
@@ -343,7 +371,7 @@
       } else if (metrics[objectType]) {
         compareMetrics(metrics[objectType], metrics[objectType], objectType);
       } else if (detail.objecttype) {
-        getObjectsByType(detail.objecttype); 
+        getObjectsByType(detail.objecttype);
       } else if (detail.objectnames) {
         // use first objectName as objectTypeName when using 'object1, object2' format
         getObjectMetrics(objectNames, objectType);
@@ -358,7 +386,7 @@
       mainEl.style.backgroundColor = changeColorShade(bgColor, 95);
       mainEl.style.color = fontColor;
     }
-    
+
 
     function changeColorShade(bgColor = "#00000085", adder = 85) {
       return bgColor.substring(0, 7) + adder;
@@ -386,7 +414,7 @@
         });
         // get the metrics for the list of objects
         getObjectMetrics(objects, ObjectTypeName);
-      });      
+      });
     }
 
 
@@ -429,7 +457,7 @@
           oldMetricsTimestamp = Object.keys(oldMetrics[key]);
         }
         if (objectType !== objectTypeName) return;
-        // if we're looking at a single object, then we need the history for that single object, 
+        // if we're looking at a single object, then we need the history for that single object,
         // not just the last metric
         if (singleObject) {
           for (let i = newMetricsTimestamp.length - 1; i >= 0; i--) {
@@ -488,9 +516,6 @@
       if (doNotInsert) {
         insertHtml('object-types-container', html);
       }
-      // setTimeout(() => {
-      //   startSetInterval();
-      // }, CONFIG_SCRIPT.intervalWait)
     }
 
 
@@ -501,9 +526,9 @@
       let mainColor = changeColorShade(bgColor, 85);
       // need to check if searchValue is contained in name, so that we don't show if it's not
       html += `
-        <div 
-          id="${data.objectinfo.name}" 
-          class="metric-container hide-children ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}" 
+        <div
+          id="${data.objectinfo.name}"
+          class="metric-container hide-children ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}"
           data-id="${data.objectinfo.name.toLowerCase()}"
         >
       `
@@ -512,7 +537,7 @@
       return html;
     }
 
-    
+
     // object type list html for a single object
     function createSingleObjectListHtml(data = {}) {
       let html = "";
@@ -520,9 +545,9 @@
       let mainColor = changeColorShade(bgColor, 85);
       // need to check if searchValue is contained in name, so that we don't show if it's not
       html += `
-        <div 
-          id="${data.meta.timestamp}" 
-          class="metric-container hide-children ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}" 
+        <div
+          id="${data.meta.timestamp}"
+          class="metric-container hide-children ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}"
           data-id="${data.objectinfo.name.toLowerCase()}"
         >
       `
@@ -532,42 +557,38 @@
     }
 
 
+
     // object metrics html
     function createMetricsHtml(values = {}, objectName = "", health = "", mainColor) {
       let html = `
-        <div 
-          class="metric-main" 
-          style="background: ${mainColor};" 
+        <div
+          class="metric-main"
+          style="background: ${mainColor};"
           onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
         >
           <div class="metric-object-name">${objectName}</div>
           <div class="metric-health">${health}</div>`
           if (values["latitude"] && values["longitude"] || values["Latitude"] && values["Longitude"]) {
             html += `
-              <div class="metric-main-sub"> 
+              <div class="metric-main-sub">
                 <div class="coordinates">Latitude: ${values["latitude"] || values["Latitude"]}</div>
                 <div class="coordinates">Longitude: ${values["longitude"] || values["Longitude"]}</div>
               </div>`
           }
         html += `</div>`;
         html += `<div class="metrics">`;
-          for (let key in values) {
-            if (key.toLowerCase() === "latitude" || key.toLowerCase() === "longitude") continue;
-            let value = values[key];
-            let isImage = valueTypeIsImage(value);
-            let isVideo = !isImage ? valueTypeIsVideo(value) : false;
+          html += loopThroughMetrics(values);
+          if (CONFIG[configIndex] && CONFIG[configIndex]["trends"] && CONFIG[configIndex]["trends"].length > 0) {
             html += `
-              <div 
-                class="metric ${isImage ? 'metric-image' : ''}" 
-                data-metric-name="${key}" 
-                data-metric-value="${value}" 
-                data-id="${objectName}" 
-                onclick="var event = arguments[0] || window.event; getWeekHistory(this, event)" 
-                style="display: ${isImage || isVideo ? "block" : "flex"}; ${isImage || isVideo ? 'text-align: center' : ''}"
-              >`
-                // if it's an image use the image
-                html += innerMetricHtml(key, value, isImage, isVideo);
-            html += `</div>`
+              <div
+                class="metric-trend"
+                data-id="${objectName}"
+                onclick="var event = arguments[0] || window.event; getHistory(this, event, ${CONFIG["trends"]})"
+                style="background: ${CONFIG[configIndex]["trendsbackgroundcolor"] || '#ff00005c'}; color: ${CONFIG[configIndex]["trendscolor"] || '#ff00005c'};"
+              >
+                Trends
+              </div>
+            `
           }
       html += `</div>`;
       return html;
@@ -579,9 +600,9 @@
       let date = new Date(time);
       let alertHeader = CONFIG[configIndex].alertheader;
       let html = `
-        <div 
-          class="metric-main" 
-          style="background: ${mainColor};" 
+        <div
+          class="metric-main"
+          style="background: ${mainColor};"
           onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
         >
           <div class="metric-object-name">
@@ -595,22 +616,80 @@
           for (let key in values) {
             let value = values[key];
             let isImage = valueTypeIsImage(value);
-            let isVideo = !isImage ? valueTypeIsVideo(value) : false;
+            let isRtsp = !isImage ? valueTypeIsRtsp(value) : false;
+            let isVideo = !isImage && !isRtsp ? valueTypeIsVideo(value) : false;
+            let isAboveType = isImage || isRtsp || isVideo;
             html += `
-              <div 
-                class="metric ${isImage ? 'metric-image' : ''}" 
-                data-metric-name="${key}" 
-                data-metric-value="${value}" 
-                data-id="${objectName}" 
-                onclick="var event = arguments[0] || window.event; showChart(this, event)" 
-                style="display: ${isImage || isVideo ? "block" : "flex"}; ${isImage || isVideo ? 'text-align: center' : ''}"
+              <div
+                class="metric ${isImage ? 'metric-image' : ''}"
+                data-metric-name="${key}"
+                data-metric-value="${value}"
+                data-id="${objectName}"
+                onclick="var event = arguments[0] || window.event; showChart(this, event)"
+                style="display: ${isAboveType ? "block" : "flex"}; ${isAboveType ? 'text-align: center' : ''}"
               >`
                 // if it's an image use the image
-                html += innerMetricHtml(key, value, isImage, isVideo)
+                html += innerMetricHtml(key, value, isImage, isVideo, isRtsp);
             html += `</div>`
           }
-      html += `</div>`;
+      html += `
+        </div>
+      `;
       return html;
+    }
+
+
+    function loopThroughMetrics(values = {}, html = "") {
+      if (Array.isArray(values)) {
+        for (let [key, value] of values.entries()) {
+          if (key.toLowerCase() === "latitude" || key.toLowerCase() === "longitude") continue;
+          if (typeof value === "object") {
+            html += loopThroughMetrics(value, html);
+            continue;
+          }
+          let isImage = valueTypeIsImage(value);
+          let isRtsp = !isImage ? valueTypeIsRtsp(value) : false;
+          let isVideo = !isImage && !isRtsp ? valueTypeIsVideo(value) : false;
+          let isAboveType = isImage || isRtsp || isVideo;
+          html += `
+            <div
+              class="metric ${isImage ? 'metric-image' : ''}"
+              data-metric-name="${key}"
+              data-metric-value="${value}"
+              data-id="${objectName}"
+              style="display: ${isAboveType ? "block" : "flex"}; ${isAboveType ? 'text-align: center' : ''}"
+            >`
+          // if it's an image use the image
+          html += innerMetricHtml(key, value, isImage, isVideo, isRtsp);
+          html += `</div>`
+        }
+        return html;
+      } else {
+        for (let key in values) {
+          if (key.toLowerCase() === "latitude" || key.toLowerCase() === "longitude") continue;
+          let value = values[key];
+          if (typeof value === "object") {
+            html += loopThroughMetrics(value, html);
+            continue;
+          }
+          let isImage = valueTypeIsImage(value);
+          let isRtsp = !isImage ? valueTypeIsRtsp(value) : false;
+          let isVideo = !isImage && !isRtsp ? valueTypeIsVideo(value) : false;
+          let isAboveType = isImage || isRtsp || isVideo;
+          html += `
+            <div
+              class="metric ${isImage ? 'metric-image' : ''}"
+              data-metric-name="${key}"
+              data-metric-value="${value}"
+              data-id="${objectName}"
+              style="display: ${isAboveType ? "block" : "flex"}; ${isAboveType ? 'text-align: center' : ''}"
+            >`
+          // if it's an image use the image
+          html += innerMetricHtml(key, value, isImage, isVideo, isRtsp);
+          html += `</div>`
+        }
+        return html;
+      }
     }
 
 
@@ -628,43 +707,56 @@
     }
 
 
+    // check to see if it's previousTimestamp
+    function valueTypeIsRtsp(value) {
+      return /^rtsp.*(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/.test(String(value));
+    }
+
+
     // check if is image and return proper html
-    function innerMetricHtml(key, value, isImage = false, isVideo = false) {
-      let html = '';
+    function innerMetricHtml(key, value, isImage = false, isVideo = false, isRtsp = false) {
+      let html = `
+        <div>${key}</div>
+      `;
       if (isImage) {
         html += `
-          <div>${key}</div>
           <img src="${value}" style="max-width: 100%" />
-        `
+        `;
       } else if (isVideo) {
         html += `
-          <div>${key}</div>
           <video controls style="max-width: 100%">
             <source src="${value}">
             Your browser does not support this video type
           </video>
-        `
+        `;
+      } else if (isRtsp) {
+        html += `
+          <img
+            class="rtsp-box"
+            id="${Math.random() * key.length + '-' + Math.random() * key.length}"
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAABCAYAAACc0f2yAAAAEElEQVR42mOsXXF0NsMwAAD1hgKHDhZICwAAAABJRU5ErkJggg=="
+            onclick="var event = arguments[0] || window.event; startVideo(this, event)"
+            style="width: 100%; min-height: 75px;"
+          />
+          <div class="click-to-load">Please click to load video</div>
+        `;
       } else {
         html += `
-          <div>${key}</div>
           <div>${value}</div>
-        `
+        `;
       }
       return html;
     }
 
-
-
-    function getWeekHistory(el = {}, event = {}) {
+    // get the days worth of history to show on the table
+    function getHistory(el = {}, event = {}) {
       event.stopPropagation();
       let objectName = event.currentTarget.dataset.id;
-      let metricValue = event.currentTarget.dataset.metricValue;
-      let metricKey = event.currentTarget.dataset.metricName;
-      if (isNaN(+metricValue) || (String(metricKey).toLowerCase() === "latitude" || String(metricKey).toLowerCase() === "longitude")) {
-        return;
-      }
-      
-      parent.n.call('metric.history', { objectName, begin: Date.now() - 604800000, end: Date.now(), limit: CONFIG_SCRIPT.historyBuffer }, (err, res) => {
+      let now = new Date();
+      // set to beginning of day
+      let begin = now.setHours(0, 0, 0, 0);
+      begin -= 604800000; // 1 week in ms
+      parent.n.call('metric.trend', { objectName, begin , end: Date.now(), fields: 'column2', limit: 500 }, (err, res) => {
         if (err) {
           console.log(err);
         }
