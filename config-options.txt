@@ -1,0 +1,52 @@
+  <script>
+    const DEFAULT_BG_COLOR = '#25689575';
+    const DEFAULT_COLOR = '#ffffff';
+    const TRENDS_DEFAULT_BG_COLOR = '#ff00005c';
+    const TRENDS_DEFAULT_COLOR = '#ffffff';
+
+    const CONFIG = [
+      {
+        objecttype: 'obj_t_markers',
+        backgroundcolor: '#25689575',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png',
+        title: 'Markers',
+        trends: [
+          { type: 'line', metric: 'column1' },
+          { type: 'bar', metric: 'column1' },
+        ],
+        trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
+        trendscolor: TRENDS_DEFAULT_COLOR,
+      },
+      {
+        objecttype: 'obj_type_1',
+        backgroundcolor: '#55685575',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png',
+        title: 'Type1',
+      },
+      {
+        objectnames: 'marker5,marker7', // no spaces
+        backgroundcolor: '#80809575',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png',
+        title: 'Markers 5 & 7',
+      },
+      {
+        objectname: 'marker8', // no spaces
+        backgroundcolor: '#98652375',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/big-o.png',
+        alerts: true,
+        alertheader: 'column2',
+        title: 'Alerts',
+      },
+    ]
+
+    const CONFIG_SCRIPT = {
+      intervalWait: 1000, // wait time between requests to retrieve data
+      historyBuffer: 200, // number of items to retrieve in limit for metric.history
+      dateFormat: 'en-us', // javascript options
+      timeFormat: 'en-us' // javascript options
+    }
+  </script>

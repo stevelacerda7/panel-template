@@ -10,41 +10,61 @@
 
     const CONFIG = [
       {
-        objecttype: 'obj_t_markers',
-        backgroundcolor: '#25689575',
+        objecttype: 'cdpparking',
+        backgroundcolor: '#0031ff75',
         color: DEFAULT_COLOR,
-        imagesrc: '/proxy/file/resource/big-o.png',
-        title: 'Markers',
-        trends: [
-          { type: 'line', metric: 'column1' },
-          { type: 'bar', metric: 'column1' },
-        ],
-        trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
-        trendscolor: TRENDS_DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/parking01.png',
+        title: 'Parking',
+        // trends: [
+        // { type: 'line', metric: 'column1' },
+        // { type: 'bar', metric: 'column1' },
+        // ],
+        // trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
+        // trendscolor: TRENDS_DEFAULT_COLOR,
       },
       {
-        objecttype: 'obj_type_1',
-        backgroundcolor: '#55685575',
+        objecttype: 'cdplights',
+        backgroundcolor: '#ffc40075',
         color: DEFAULT_COLOR,
-        imagesrc: '/proxy/file/resource/big-o.png',
-        title: 'Type1',
+        imagesrc: '/proxy/file/resource/light01.png',
+        title: 'Lighting',
+        // trends: [
+        // { type: 'line', metric: 'column1' },
+        // { type: 'bar', metric: 'column1' },
+        // ],
+        // trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
+        // trendscolor: TRENDS_DEFAULT_COLOR,
       },
       {
-        objectnames: 'marker5,marker7', // no spaces
-        backgroundcolor: '#80809575',
+        objecttype: 'cdpenv',
+        backgroundcolor: '#1fbd2f75',
         color: DEFAULT_COLOR,
-        imagesrc: '/proxy/file/resource/big-o.png',
-        title: 'Markers 5 & 7',
+        imagesrc: '/proxy/file/resource/env01.png',
+        title: 'Env',
+        // trends: [
+        // { type: 'line', metric: 'column1' },
+        // { type: 'bar', metric: 'column1' },
+        // ],
+        // trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
+        // trendscolor: TRENDS_DEFAULT_COLOR,
       },
-      {
-        objectname: 'marker8', // no spaces
-        backgroundcolor: '#98652375',
-        color: DEFAULT_COLOR,
-        imagesrc: '/proxy/file/resource/big-o.png',
-        alerts: true,
-        alertheader: 'column2',
-        title: 'Alerts',
-      },
+
+      // {
+      //   objectnames: 'marker5,marker7', // no spaces
+      //   backgroundcolor: '#80809575',
+      //   color: DEFAULT_COLOR,
+      //   imagesrc: '/proxy/file/resource/big-o.png',
+      //   title: 'Markers 5 & 7',
+      // },
+      // {
+      //   objectname: 'marker8', // no spaces
+      //   backgroundcolor: '#98652375',
+      //   color: DEFAULT_COLOR,
+      //   imagesrc: '/proxy/file/resource/big-o.png',
+      //   alerts: true,
+      //   alertheader: 'column2',
+      //   title: 'Alerts',
+      // },
     ]
 
     const CONFIG_SCRIPT = {
@@ -99,6 +119,7 @@
       overflow: hidden;
       font-family: Arial, Tahoma;
       line-height: 1.5;
+      padding-top: 5px;
     }
     #main-container {
       position: absolute;
@@ -108,7 +129,7 @@
       margin-top: 15px;
     }
     #panel {
-      height: calc(100% - 150px);
+      height: calc(100% - 160px);
       width: 100%;
       overflow: auto;
     }
@@ -138,9 +159,23 @@
     }
     .metric-main {
       padding: .4rem;
-      display: flex;
       flex-wrap: wrap;
       word-break: break-all;
+    }
+    .flex-me {
+      display: flex;
+      justify-content: space-between;
+    }
+    .location {
+      width: 25px;
+      height: 25px;
+      font-size: 1.5em;
+      display: flex;
+      justify-content: center;
+      border-radius: 50px;
+    }
+    .location:after {
+      content: '\021A9';
     }
     .metric-object-name,
     .metric-health {
@@ -164,6 +199,9 @@
     .metric > div {
       padding: .2rem 0;
     }
+    .metric > div:first-child {
+      margin-right: .4rem;
+    }
     .timestamp {
       font-size: 0.7rem;
       margin-top: .2rem;
@@ -174,6 +212,12 @@
       justify-content: space-between;
       font-size: .8rem;
       position: relative;
+    }
+    .metric-child {
+      display: block !important;
+    }
+    .metric > .metric {
+      margin-left: .4rem;
     }
     .metric > div {
       line-height: 1.3;
@@ -432,6 +476,7 @@
         } else {
           compareMetrics(metrics[objectTypeName], res.body, objectTypeName, true);
         }
+        startSetInterval();
       });
     }
 
@@ -566,13 +611,24 @@
           style="background: ${mainColor};"
           onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
         >
-          <div class="metric-object-name">${objectName}</div>
-          <div class="metric-health">${health}</div>`
+          <div class="flex-me">
+            <div class="metric-object-name">${objectName}</div>
+            <div class="metric-health">${health}</div>
+          </div>`;
           if (values["latitude"] && values["longitude"] || values["Latitude"] && values["Longitude"]) {
             html += `
-              <div class="metric-main-sub">
-                <div class="coordinates">Latitude: ${values["latitude"] || values["Latitude"]}</div>
-                <div class="coordinates">Longitude: ${values["longitude"] || values["Longitude"]}</div>
+              <div class="metric-main-sub flex-me">
+                <div class="coordinates-container">
+                  <div class="coordinates">Latitude: ${values["latitude"] || values["Latitude"]}</div>
+                  <div class="coordinates">Longitude: ${values["longitude"] || values["Longitude"]}</div>
+                </div>
+                <div
+                  class="location"
+                  style="background:${changeColorShade(mainColor, 99)}"
+                  data-latitude="${values["latitude"] || values["Latitude"]}"
+                  data-longitude="${values["longitude"] || values["Longitude"]}"
+                  onclick="var event = arguments[0] || window.event; goToOnMap(this, event)"
+                ></div>
               </div>`
           }
         html += `</div>`;
@@ -613,25 +669,7 @@
         </div>
         <div class="metrics">
       `;
-          for (let key in values) {
-            let value = values[key];
-            let isImage = valueTypeIsImage(value);
-            let isRtsp = !isImage ? valueTypeIsRtsp(value) : false;
-            let isVideo = !isImage && !isRtsp ? valueTypeIsVideo(value) : false;
-            let isAboveType = isImage || isRtsp || isVideo;
-            html += `
-              <div
-                class="metric ${isImage ? 'metric-image' : ''}"
-                data-metric-name="${key}"
-                data-metric-value="${value}"
-                data-id="${objectName}"
-                onclick="var event = arguments[0] || window.event; showChart(this, event)"
-                style="display: ${isAboveType ? "block" : "flex"}; ${isAboveType ? 'text-align: center' : ''}"
-              >`
-                // if it's an image use the image
-                html += innerMetricHtml(key, value, isImage, isVideo, isRtsp);
-            html += `</div>`
-          }
+          html += loopThroughMetrics(values);
       html += `
         </div>
       `;
@@ -639,23 +677,16 @@
     }
 
 
-    function loopThroughMetrics(values = {}, html = "") {
+    function loopThroughMetrics(values = {}, html = "", isChild = null) {
       if (Array.isArray(values)) {
         for (let [key, value] of values.entries()) {
-          if (key.toLowerCase() === "latitude" || key.toLowerCase() === "longitude") continue;
-          if (typeof value === "object") {
-            html += loopThroughMetrics(value, html);
-            continue;
-          }
           let isImage = valueTypeIsImage(value);
           let isRtsp = !isImage ? valueTypeIsRtsp(value) : false;
           let isVideo = !isImage && !isRtsp ? valueTypeIsVideo(value) : false;
           let isAboveType = isImage || isRtsp || isVideo;
           html += `
             <div
-              class="metric ${isImage ? 'metric-image' : ''}"
-              data-metric-name="${key}"
-              data-metric-value="${value}"
+              class="metric ${isImage ? 'metric-image' : ''} ${typeof value === "object" ? 'metric-child' : ''}"
               data-id="${objectName}"
               style="display: ${isAboveType ? "block" : "flex"}; ${isAboveType ? 'text-align: center' : ''}"
             >`
@@ -668,19 +699,13 @@
         for (let key in values) {
           if (key.toLowerCase() === "latitude" || key.toLowerCase() === "longitude") continue;
           let value = values[key];
-          if (typeof value === "object") {
-            html += loopThroughMetrics(value, html);
-            continue;
-          }
           let isImage = valueTypeIsImage(value);
           let isRtsp = !isImage ? valueTypeIsRtsp(value) : false;
           let isVideo = !isImage && !isRtsp ? valueTypeIsVideo(value) : false;
           let isAboveType = isImage || isRtsp || isVideo;
           html += `
             <div
-              class="metric ${isImage ? 'metric-image' : ''}"
-              data-metric-name="${key}"
-              data-metric-value="${value}"
+              class="metric ${isImage ? 'metric-image' : ''}  ${typeof value === "object" ? 'metric-child' : ''}"
               data-id="${objectName}"
               style="display: ${isAboveType ? "block" : "flex"}; ${isAboveType ? 'text-align: center' : ''}"
             >`
@@ -715,9 +740,15 @@
 
     // check if is image and return proper html
     function innerMetricHtml(key, value, isImage = false, isVideo = false, isRtsp = false) {
-      let html = `
-        <div>${key}</div>
-      `;
+      let html = '';
+      if (!Array.isArray(value) && typeof key !== "number") {
+        html += `
+          <div>${key}</div>
+        `;
+      }
+      if (typeof value === "object") {
+          return loopThroughMetrics(value, html, true);
+      }
       if (isImage) {
         html += `
           <img src="${value}" style="max-width: 100%" />
@@ -769,6 +800,14 @@
     // show chart based on data received
     function showChart(data) {
       // TODO: chart
+    }
+
+
+    // zoom into location on maps
+    function goToOnMap(context, event) {
+      event.stopPropagation();
+      let { latitude, longitude } = context.dataset;
+      window.frameElement._map.setView({ lat: latitude, lng: longitude }, 200);
     }
 
 
@@ -824,7 +863,6 @@
         getObjectsByType(objectType);
       }
     }
-
 
 
 

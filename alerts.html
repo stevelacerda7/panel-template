@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+
+  <script>
+    const L = window.parent.L;
+    const _map = window.frameElement._map;
+    const _do = _map.do;
+    const n = _map._player.n;
+
+    console.warn({L})
+    console.warn({_map})
+    console.warn({_do})
+    console.warn({n})
+
+    var CONFIG = {
+      objectType: "something",
+      backgroundColor: "rgba(0,0,0,0.8)", // please rgba(x,x,x,x) format, see toggleSlide()
+      buttonColor: "#086576",
+      fieldNames: ["name", "status", "type", "value", "time", "description"],
+      titleNames: ["Name", "Status", "Type", "Value", "Time", "Description"],
+    }
+
+    // td data goes here, currently hard coded.
+    var tdData = [
+      {
+        "tower": "MSO Merida",
+        "severity": "H",
+        "component": "Door",
+        "site_id": "YUC-8012",
+        "time": "2017-5-23 16:49:02-05:00",
+        "description": "Door_Contact_2(OPEN)"
+      },
+    ];
+
+    // currently hard coded in createDOM().
+    var expandableData = [];
+
+    var currentData = tdData;
+    var fieldSortedAscending = {};
+    for (let i = 0; i < CONFIG["fieldNames"].length; i++) {
+      let fieldName = CONFIG["fieldNames"][i];
+      fieldSortedAscending[fieldName] = true;
+    }
+  </script>
+  <title>Alerts</title>
+  <style>
+    html {
+      overflow-y: hidden;
+    }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    th, td {
+      height: 45px;
+    }
+
+    #alert-table {
+      width: 100%;
+      color: #eee;
+      border-spacing: 0 1px;
+      font-weight: 400;
+    }
+
+    #alert-table tr {
+      border-top: 10px solid rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    thead, tbody tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    tbody {
+      overflow: auto;
+      display: block;
+    }
+
+    caption input {
+      margin-left: 30px;
+      border-radius: 4px;
+      width: 30%;
+    }
+
+    caption input:active, caption input:focus {
+      outline: none;
+    }
+
+    caption a, .action-buttons a {
+      text-decoration: none;
+      color: #eee;
+      border-radius: 4px;
+      padding: 5px 15px;
+      margin: 5px;
+      box-shadow: 1px 1px 7px black;
+    }
+
+    caption {
+      background-color: rgba(0,0,0,0.8);
+      text-align: left;
+      padding: 10px;
+    }
+
+    th:hover, .active, tr:hover {
+      background-color: rgba(0,0,0,0.15);
+      cursor: pointer;
+      transition: 0.2s;
+      color: #fff;
+    }
+
+    th span.sort-by {
+      display: block;
+      position: relative;
+      padding-right: 18px;
+    }
+
+    span.sort-by:before, span.sort-by:after {
+      border: 4px solid transparent;
+      content: "";
+      right: 15px;
+      top: 50%;
+      position: absolute;
+      width: 0;
+    }
+
+    span.sort-by:before {
+      border-bottom-color: #666;
+      margin-top: -9px;
+    }
+
+    span.sort-by:after {
+      border-top-color: #666;
+      margin-top: 1px;
+    }
+
+    .row-content {
+      margin: 0;
+      padding: 0 18px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out;
+      position: relative;
+    }
+
+    .row-content p {
+      display: inline-block;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      float: right;
+      position: absolute;
+      top: calc(50% - 38px);
+      right: 0;
+    }
+
+    .action-buttons a {
+      text-align: center;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="alerts">
+    <table id="alert-table">
+      <caption>ALL ALERTS
+        <input type="text" oninput="searchIt(this)" placeholder="Search..." />
+      </caption>
+      <thead>
+        <tr>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Example html -->
+        <!-- <tr>
+          <td>MSO Merida</td>
+          <td>H</td>
+          <td>Door</td>
+          <td>YUC-8012</td>
+          <td>2017-5-23 16:49:02-05:00</td>
+          <td>Door_Contact_2(OPEN)</td>
+        </tr> -->
+      </tbody>
+    </table>
+  </div>
+
+  <script type="text/javascript">
+    window.addEventListener('message', (data) => {
+      console.log('mmmmm', data);
+      createDOM(data);
+    });
+
+    function searchIt(event = {}) {
+      let { value = "" } = event;
+      let rows = document.querySelectorAll('tbody tr');
+      let matched = [];
+      for (let i = 0; i < rows.length; i++) {
+        let row = rows[i];
+        let passesTest = row.dataset.search.toLowerCase().indexOf(value.toLowerCase()) > -1 ? true : false;
+        if (!passesTest) {
+          row.classList.add('hidden');
+        } else {
+          row.classList.remove('hidden');
+          matched.push(rowToPOJO(row));
+        }
+      }
+
+      currentData = matched;
+      updateDownloadButton(currentData);
+    }
+
+    function rowToPOJO(element) {
+      let result = {};
+      let fields = CONFIG["fieldNames"];
+
+      for (let i = 0, len = fields.length; i < len; i++) {
+        let field = fields[i];
+        result[field] = element.querySelector(`td:nth-child(${i+1}`).textContent;
+      }
+
+      return result;
+    }
+
+    function sortByField(field, direction="asc") {
+      return function(a,b) {
+        let aField = a[`${field}`].toLowerCase();
+        let bField = b[`${field}`].toLowerCase();
+        if (direction === "desc") {
+          return (aField < bField) ? 1 : ((aField > bField) ? -1 : 0)
+        } else {
+          return (aField < bField) ? -1 : ((aField > bField) ? 1 : 0)
+        }
+      }
+    }
+
+    function toggleSlide(rowContent, rowElement) {
+      if (rowContent) {
+        if (rowContent.style.maxHeight) {
+          rowContent.style.maxHeight = null;
+          rowElement.style.backgroundColor = CONFIG['backgroundColor'];
+        } else {
+          function addRGBAOpacity(rowContent, rowElement, opacity) {
+            rowContent.style.maxHeight = rowContent.scrollHeight + "px";
+            let newColor = CONFIG['backgroundColor'].split(',');
+            let newColorAlpha = newColor[3];
+            newColorAlpha = (parseFloat(newColorAlpha.slice(0, newColorAlpha.length - 1)) + opacity)
+              .toString() + ')';
+            newColor[3] = newColorAlpha;
+            rowElement.style.backgroundColor = newColor.join(',');
+          }
+
+          addRGBAOpacity(rowContent, rowElement, 0.1);
+        }
+      }
+    }
+
+    document.querySelector('tbody').addEventListener('click', function (e) {
+      let rowContent, rowElement;
+
+      // expects <tr><td> followed by a <div><p> adjacent sibling
+      if (e.target.tagName === "TR") {
+        rowContent = e.target.nextElementSibling
+        rowElement = e.target;
+      } else if (e.target.tagName === "TD") {
+        rowContent = e.target.parentElement.nextElementSibling;
+        rowElement = e.target.parentElement;
+      } else if (e.target.tagName === "P") {
+        rowContent = e.target.parentElement;
+        rowElement = e.target.parentElement.previousElementSibling;
+      } else if (e.target.tagName === "DIV") {
+        rowContent = e.target;
+        rowElement = e.target.previousElementSibling;
+      }
+      toggleSlide(rowContent, rowElement);
+    }, false);
+
+    function createDOM(arr) {
+      let headRow = document.querySelector("thead tr");
+      let caption = document.querySelector("caption");
+      let tbody = document.querySelectorAll("tbody")[0];
+      headRow.style.backgroundColor = CONFIG['backgroundColor'];
+      caption.style.backgroundColor = CONFIG['backgroundColor'];
+      tbody.style.height = window.frameElement ? `${window.frameElement.clientHeight -  90}px` : `${window.innerHeight - 90}px`;
+
+      bodyHTML = '';
+      headRowHTML = '';
+      for (let i = 0, len = CONFIG["titleNames"].length; i < len; i++) {
+        let title = CONFIG["titleNames"][i];
+        headRowHTML += `<th><span class="sort-by">${title}</span></td>`;
+      }
+
+      for (let i = 0, len = arr.length; i < len; i++) {
+        let obj = arr[i];
+        let str = "";
+
+        for (let j = 0, len = CONFIG["fieldNames"].length; j < len; j++) {
+          let field = CONFIG["fieldNames"][j];
+          str += obj[field];
+        }
+        bodyHTML += `<tr data-search="${str}" style="background-color: ${CONFIG['backgroundColor']}">`;
+
+        for (let j = 0, len = CONFIG["fieldNames"].length; j < len; j++) {
+          let field = CONFIG["fieldNames"][j];
+          bodyHTML += `<td>${obj[`${field}`]}</td>`
+        }
+
+        bodyHTML += "</tr>";
+        bodyHTML += `<div class="row-content" style="background-color: ${CONFIG['backgroundColor']}">
+                      <p>Here is some filler content
+                        <br />
+                        <img src="/proxy/file/resource/fillerImage.jpg"></img>
+                      </p>
+                      <div class="action-buttons">
+                        <a href="#" style="background-color: ${CONFIG['buttonColor']}"
+                                    onclick="showSOPPanel()">SOP</a>
+                        <a href="#" style="background-color: ${CONFIG['buttonColor']}"
+                                    onclick="showIMPanel()">IM</a>
+                      </div>
+                     </div>`
+      }
+
+      tbody.innerHTML = bodyHTML;
+      headRow.innerHTML = headRowHTML;
+    }
+
+    function showSOPPanel() {
+      // assumes SOP panel is on the same map. Otherwise call on parent:
+      // parent = _do.parent()
+      // then parent.do.showUIE('SOP');
+      _map.do.showUIE('SOP'); // needs to be specific to the alert.
+    }
+
+    function showIMPanel() {
+      _map.do.showUIE('IM'); // needs to be specific to the alert.
+    }
+
+    function initDOMByField(arr, field, direction) {
+      sortedArr = arr.sort(sortByField(field, direction));
+      currentData = JSON.parse(JSON.stringify(sortedArr));
+      createDOM(sortedArr);
+    }
+
+    function objArrayToCSV(rows) {
+      let csv = '';
+
+      if (rows.length === 0) return [];
+      let fields = Object.keys(rows[0]);
+
+      for (let row = -1; row < rows.length; row++) {
+        let numFields = fields.length;
+        let fieldsCounter = 0;
+
+        if (row === -1) {
+          for (let i = 0; i < numFields; i++) {
+            let field = fields[i];
+            csv += field + (fieldsCounter+1 < numFields ? ',' : '\r\n');
+            fieldsCounter++;
+          }
+        } else {
+          for (let i = 0; i < numFields; i++) {
+            let field = fields[i];
+            csv += rows[row][field] + (fieldsCounter+1 < numFields ? ',' : '\r\n');
+            fieldsCounter++;
+          }
+        }
+      }
+      return csv;
+    }
+
+    function createDownloadButton(objArray) {
+      let csv = objArrayToCSV(objArray);
+      let link = document.createElement('a')
+      link.id = 'download-csv'
+      link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));
+      link.setAttribute('download', 'alerts.csv');
+      link.textContent = "Download"
+      link.style.backgroundColor = CONFIG['buttonColor'];
+      document.querySelector('caption').appendChild(link);
+    }
+
+    function updateDownloadButton(objArray) {
+      let csv = objArrayToCSV(objArray);
+      let link = document.querySelector('a');
+      link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));
+    }
+
+    function main() {
+      // initially will be time sorted
+      // initDOMByField(tdData, "time");
+
+      let head = document.querySelector("#alert-table thead tr");
+
+      // use event delegation here, if e.target = header row th, take th textContent and initDOMByField.
+      head.addEventListener('click', function(e) {
+        let selectedText = e.target.textContent;
+        let snakedText = selectedText.toLowerCase().split(" ").join("_");
+
+        if (fieldSortedAscending[snakedText]) {
+          initDOMByField(tdData, snakedText);
+          fieldSortedAscending[snakedText] = false;
+        } else {
+          initDOMByField(tdData, snakedText, "desc");
+          fieldSortedAscending[snakedText] = true;
+        }
+      });
+
+      createDownloadButton(currentData);
+    }
+
+
+    main();
+  </script>
+</body>
+</html>
