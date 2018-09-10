@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!-- buttons script and config -->
   <script>
     const DEFAULT_BG_COLOR = '#25689575';
     const DEFAULT_COLOR = '#ffffff';
     const TRENDS_DEFAULT_BG_COLOR = '#ff00005c';
     const TRENDS_DEFAULT_COLOR = '#ffffff';
+
+    const CONFIG_SCRIPT = {
+      intervalWait: 1000, // wait time between requests to retrieve data
+      historyBuffer: 200, // number of items to retrieve in limit for metric.history
+      dateFormat: 'en-us', // javascript options
+      timeFormat: 'en-us' // javascript options
+    }
 
     const CONFIG = [
       {
@@ -67,18 +73,21 @@
       // },
     ]
 
-    const CONFIG_SCRIPT = {
-      intervalWait: 1000, // wait time between requests to retrieve data
-      historyBuffer: 200, // number of items to retrieve in limit for metric.history
-      dateFormat: 'en-us', // javascript options
-      timeFormat: 'en-us' // javascript options
-    }
+
   </script>
   <!-- buttons style -->
   <style>
     :root {
-      --hover-bg-color: #25689575;
-      --hover-color: #ffffff;
+      --triangle-color: #00000098;
+    }
+    body {
+      height: 100%;
+      margin: 0;
+      font-size: 16px;
+      overflow: hidden;
+      font-family: Arial, Tahoma;
+      line-height: 1.5;
+      padding-top: 5px;
     }
     #image-buttons-container {
       display: flex;
@@ -103,23 +112,10 @@
       position: absolute;
       content: '';
       border: 10px solid transparent;
-      border-top: 10px solid #00000098;
+      border-top: 10px solid var(--triangle-color);
       left: 50%;
       transform: translateX(-50%);
       bottom: -20px;
-    }
-  </style>
-
-
-  <style>
-    body {
-      height: 100%;
-      margin: 0;
-      font-size: 16px;
-      overflow: hidden;
-      font-family: Arial, Tahoma;
-      line-height: 1.5;
-      padding-top: 5px;
     }
     #main-container {
       position: absolute;
