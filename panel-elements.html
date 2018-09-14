@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    const DEFAULT_BG_COLOR = '#25689575';
+    const DEFAULT_COLOR = '#ffffff';
+    const TRENDS_DEFAULT_BG_COLOR = '#ff00005c';
+    const TRENDS_DEFAULT_COLOR = '#ffffff';
+
+    const CONFIG_SCRIPT = {
+      intervalWait: 1000, // wait time between requests to retrieve data
+      historyBuffer: 200, // number of items to retrieve in limit for metric.history
+      dateFormat: 'en-us', // javascript options
+      timeFormat: 'en-us', // javascript options
+    }
+
+    const CONFIG_ALERTS = {
+      objectnames: ['alarm_sensors'],
+      primaryfield: 'description',
+      number: 5,
+      backgroundcolor: '#ff0000',
+      color: DEFAULT_COLOR,
+    }
+
+    const CONFIG = [
+      {
+        uielements: 'lights-gps', // no spaces comma separated
+        backgroundcolor: '#ffc400',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/light01.png',
+        title: 'Lights',
+      },
+      {
+        uielements: 'env-gps', // no spaces comma separated
+        backgroundcolor: '#1fbd2f',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/env01.png',
+        title: 'Environment',
+      },
+      {
+        uielements: 'parking-gps', // no spaces comma separated
+        backgroundcolor: '#0031ff',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/parking01.png',
+        title: 'Parking',
+      },
+    ]
+
+
+  </script>
+  <!-- buttons style -->
+  <style>
+    :root {
+      --triangle-color: #00000098;
+      --alerts-title-background: #ff0000;
+    }
+    body {
+      height: 100%;
+      margin: 0;
+      font-size: 16px;
+      overflow: hidden;
+      font-family: Arial, Tahoma;
+      line-height: 1.5;
+      padding-top: 5px;
+    }
+    #image-buttons-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .image {
+      flex: 1 1 5%;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      height: 40px;
+    }
+    #image-buttons-container img {
+      max-width: 100%;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      margin-bottom: 1rem;
+    }
+    div.selected span::after {
+      position: absolute;
+      content: '';
+      border: 10px solid transparent;
+      border-top: 10px solid var(--triangle-color);
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -20px;
+    }
+    #main-container {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      margin-top: 15px;
+    }
+    #panel {
+      height: calc(100% - 160px);
+      width: 100%;
+      overflow: unset;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    #panel > div {
+      position: absolute;
+      height: 50%;
+      top: 0;
+      overflow: auto;
+      width: 100%;
+    }
+    #alerts {
+      top: calc(50% + 48px) !important;
+    }
+    #errors .metric-main {
+      margin-bottom: 1px;
+    }
+    #alerts .error-headline-values {
+      color: var(--alerts-title-background);
+      font-weight: bold;
+    }
+    .alerts-title {
+      padding: 0px 8px;
+      background-color: var(--alerts-title-background);
+      top: 50% !important;
+      height: 48px !important;
+    }
+   .alerts-title h2 {
+      margin: 0;
+      padding: 6px 0;
+      text-transform: capitalize;
+      color: #ffffff;
+    }
+    #alerts .metric-container {
+      border-bottom: 1px dotted var(--alerts-title-background);
+    }
+    #search {
+      width: 90%;
+      display: block;
+      margin: 10px auto;
+    }
+    #search input {
+      width: calc(100% - .8rem);
+      border-radius: .2rem;
+      border: none;
+      padding: .4rem;
+    }
+    #loading-spinner {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .metric-container.hide-children  .metrics {
+      display: none;
+    }
+    #errors .metric-container:first-child .metrics {
+      display: block;
+    }
+    .metric-container {
+      margin: 0;
+      cursor: pointer;
+    }
+    .metric-main {
+      padding: .4rem;
+      flex-wrap: wrap;
+    }
+    .metric-object-name {
+      word-break: break-all;
+      font-weight: bold;
+    }
+    .flex-me {
+      display: flex;
+      justify-content: space-between;
+    }
+    .location {
+      width: 25px;
+      height: 25px;
+      font-size: 1.5em;
+      display: flex;
+      justify-content: center;
+      border-radius: 50px;
+    }
+    .location:after {
+      content: '\021A9';
+    }
+    .metric-object-name,
+    .metric-health {
+      padding: .2rem 0;
+    }
+    .metric-object-name {
+      flex: 0 0 75%;
+    }
+    .metric-health {
+      flex: 0 0 25%;
+    }
+    .metric-trend {
+      text-align: center;
+      margin-top: .2rem;
+      padding: 0.3rem;
+    }
+    .metric-main-sub {
+      font-size: 0.7rem;
+      padding: .1rem .4rem;
+    }
+    .metric > div {
+      padding: .2rem 0;
+    }
+    .metric > div:first-child {
+      margin-right: .4rem;
+    }
+    .metric > div:nth-child(2) {
+      word-break: break-all;
+    }
+    .metric-child > div {
+      word-break: unset !important;
+    }
+    .timestamp {
+      font-size: 0.7rem;
+      margin-top: .2rem;
+    }
+    .metric {
+      padding: 0 .8rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: .8rem;
+      position: relative;
+    }
+    .metric-child {
+      display: block !important;
+    }
+    .metric > .metric {
+      margin-left: .4rem;
+    }
+    .metric > div {
+      line-height: 1.3;
+    }
+    .metric.metric-image {
+      flex-direction: column;
+      align-items: center;
+    }
+    .metric-main.metrics-hidden ~ .metric {
+      display: none;
+    }
+    .metric .click-to-load {
+      right: 0;
+      position: absolute;
+      top: 50%;
+      left: 0;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+
+
+</head>
+<body id="body">
+  <div id="image-buttons-container"></div>
+
+  <div id="main-container">
+    <div id="title" style="padding: 0 .4rem"></div>
+
+    <div id="search">
+      <input type="text" oninput="searchIt(this)" placeholder="Search..." />
+    </div>
+
+    <div id="panel">
+      <div id="loading-spinner">
+        <!-- base64 loading spinner -->
+        <img src="data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjAiIHdpZHRoPSI2NHB4IiBoZWlnaHQ9IjY0cHgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoMTM1IDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiNiZWJlYmUiIHRyYW5zZm9ybT0icm90YXRlKDE4MCA2NCA2NCkiLz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjOTc5Nzk3IiB0cmFuc2Zvcm09InJvdGF0ZSgyMjUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iIzZlNmU2ZSIgdHJhbnNmb3JtPSJyb3RhdGUoMjcwIDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiMzYzNjM2MiIHRyYW5zZm9ybT0icm90YXRlKDMxNSA2NCA2NCkiLz48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgdmFsdWVzPSIwIDY0IDY0OzQ1IDY0IDY0OzkwIDY0IDY0OzEzNSA2NCA2NDsxODAgNjQgNjQ7MjI1IDY0IDY0OzI3MCA2NCA2NDszMTUgNjQgNjQiIGNhbGNNb2RlPSJkaXNjcmV0ZSIgZHVyPSI3MjBtcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiPjwvYW5pbWF0ZVRyYW5zZm9ybT48L2c+PGc+PGNpcmNsZSBmaWxsPSIjMDAwIiBjeD0iNjMuNjYiIGN5PSI2My4xNiIgcj0iMTIiLz48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjcyMG1zIiBiZWdpbj0iMHMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxOzA7MSIvPjwvZz48L3N2Zz4=" />
+      </div>
+      <!-- place error messages in here -->
+      <div id="object-types-container"></div>
+      <div class="title alerts-title">
+        <h2>Alerts</h2>
+      </div>
+      <div id="alerts">
+        <div id="errors"></div>
+    </div>
+  </div>
+
+
+
+  <!-- buttons script -->
+  <script>
+    // use config to place buttons in DOM
+    let buttonsHtml = "";
+    for (let i = 0; i < CONFIG.length; i++) {
+      buttonsHtml += `<div class="image ${i === 0 ? 'selected' : ''}" data-configindex="${i}"`
+      for (let key in CONFIG[i]) {
+        buttonsHtml += `
+            data-${key}="${CONFIG[i][key]}"
+          `
+      }
+      buttonsHtml += `
+          >
+            <span>
+              <img src="${CONFIG[i].imagesrc}" />
+            </span>
+          </div>
+        `
+    }
+    // all buttonsHtml to DOM
+    let imageButtonsContainerEl = document.getElementById('image-buttons-container');
+    imageButtonsContainerEl.innerHTML = buttonsHtml;
+
+
+    // add click listener that fires an event when the objecttype button is selected
+    let imageEls = document.getElementsByClassName('image');
+    for (let i = 0; i < imageEls.length; i++) {
+      // attach event listener
+      imageEls[i].addEventListener('click', function (evt) {
+        // when clicked remove selected from all imageEls,
+        for (let j = 0; j < imageEls.length; j++) {
+          if (imageEls[j].classList.contains('selected')) {
+            imageEls[j].classList.remove('selected');
+          }
+        }
+        // add selected to the imageEl that was selected
+        this.classList.add('selected');
+        // fire an event for all listeners with information regarding
+        // objecttype and other params
+        let obj = {}
+        for (let key in evt.currentTarget.dataset) {
+          obj[key] = evt.currentTarget.dataset[key];
+        }
+        fireEvent(obj)
+      });
+    }
+
+
+    // fires off an event letting everyone know which button was
+    // clicked
+    function fireEvent(obj) {
+      let event = new CustomEvent('panel-button-fire', {
+        detail: obj
+      });
+      document.dispatchEvent(event);
+    }
+
+    // need to fire off an event choosing the first item in config,
+    // otherwise nothing will be shown on the initial load
+    window.onload = function () {
+      imageEls[0].click();
+    };
+  </script>
+
+
+
+  <!-- panel body script -->
+  <script>
+    let { frameElement: { contentWindow : { parent = {} } = {} } = {} } = window;
+    let objectName = "";
+    let startSetIntervalStarted = false;
+    let metrics = {};
+    let searchValue = "";
+    let configIndex = null;
+    let oldUielements = "";
+    let uielements = "";
+    let bgColor = "";
+    let fontColor = "";
+    let counter = 0;
+    let selectedObjects = [];
+
+    // search bar
+    function searchIt(event = {}) {
+      let { value = "" } = event;
+      searchValue = value;
+      let els = document.getElementsByClassName('metric-container');
+      for (let i = 0; i < els.length; i++) {
+        let passesTest = els[i].dataset.id.toLowerCase().indexOf(value.toLowerCase()) > -1 ? true : false;
+        if (!passesTest) {
+          els[i].classList.add('hidden');
+        } else {
+          els[i].classList.remove('hidden');
+        }
+      }
+    }
+
+
+    // remove hidden from metric-container
+    function showMetricContainer(el, event) {
+      event.stopPropagation();
+      el.parentElement.classList.toggle('hide-children');
+      let index = selectedObjects.indexOf(el.dataset.id);
+      if (index > -1) {
+        selectedObjects.splice(index, 1);
+      } else {
+        selectedObjects.push(el.dataset.id);
+      }
+    }
+
+
+    // listen for object type event
+    document.addEventListener('panel-button-fire', function(evt = {}) {
+      if (evt.detail.uielements === uielements) return; // already selected this tab, don't do anything
+      counter = 0;
+      selectedObjects = [];
+      let { detail = {} } = evt;
+      oldUielements = uielements;
+      uielements = detail.uielements;
+      bgColor = detail.backgroundcolor;
+      fontColor = detail.color;
+      insertHtml('object-types-container', '');
+      changeColors(fontColor);
+      changeTitle(detail.title);
+      getDataFromMap(detail.uielements);
+      oldUielements = uielements;
+    });
+
+
+    function getDataFromMap(uielements = "") {
+      let uiEls = uielements.split(',');
+      for (let i = 0; i < uiEls.length; i++) {
+        if (uiEls[i].length === 0) continue;
+        let el = window.frameElement._map.do.getUIE(uiEls[i]);
+        if (el && el.ClassName === "Image") {
+          let object = {};
+          // if (metrics[uiEls[i]] == true) {
+          //   // just keep going and skip next else if statement
+          // } else if (!(el && el.layer && el.layer.options && el.layer.options.metric) && counter < 1) {
+          //   return setTimeout(function() {
+          //     counter++;
+          //     getDataFromMap(uielements);
+          //   }, 1000);
+          // }
+          object[el['objectName']] = el.layer.options.metric || true;
+          compareMetrics(uiEls[i], object, el['objectName']);
+          metrics[uiEls[i]] = [el['objectName']];
+          metrics[uiEls[i]] = el.layer.options.metric || true;
+        } else if (el) {
+          getObjectsFromMap(el, compareGPSMetrics);
+        }
+      }
+    }
+
+
+    function startSetInterval() {
+      setInterval(function() {
+        getDataFromMap(uielements);
+        startSetIntervalStarted = true;
+      }, 5000);
+    }
+
+
+    function compareMetrics(uielement, object, objectName) {
+      if (oldUielements !== uielements) {
+        createHtml(object);
+      } else if (metrics[uielement] && metrics[uielement]['time'] && metrics[uielement]['time'] === object[objectName].time) {
+        return;
+      } else {
+        createHtml(object);
+      }
+    }
+
+
+    function compareGPSMetrics(uielement, objects) {
+      createHtml(objects);
+    }
+
+
+    function getObjectsFromMap(el = {}, cb = () => {}) {
+      let objects = el.getObjects();
+      if (!objects) {
+        setTimeout(function() {
+          getObjectsFromMap(el, cb);
+        }, 100);
+      } else {
+        metrics[el.Name] = objects;
+        cb(el.Name, objects);
+      }
+    }
+
+
+    // compare metrics and create a new metrics html section
+    // and attach it in place of the old html
+    function createHtml(data = {}) {
+      if (!startSetIntervalStarted) startSetInterval();
+      let html = '';
+      for (let key in data) {
+        if (data[key] && data[key].options && data[key].options.metric) {
+          html = createObjectListHtml(data[key].options.metric)
+        } else if (data[key] && data[key]['value']) {
+          html += createObjectListHtml(data[key]);
+        } else if (data[key] === true) {
+          // for cameras and other objects where there are no metrics
+          html += createObjectListHtmlWithNoMetrics(data, key);
+        } else {
+          html += createObjectListHtml(data[key]);
+        }
+        if (!document.getElementById(key)) {
+          appendHtml('object-types-container', html);
+        } else {
+          insertOuterHtml(key, html);
+        }
+      }
+    }
+
+
+    // object type list html
+    function createObjectListHtml(data = {}) {
+      let html = "";
+      let { value = {} } = data;
+      let mainColor = bgColor;
+      // need to check if searchValue is contained in name, so that we don't show if it's not
+      html += `
+        <div
+          id="${data.objectinfo.name}"
+          class="metric-container ${selectedObjects.indexOf(data.objectinfo.name) > -1 ? '' : 'hide-children'} ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}"
+          data-id="${data.objectinfo.name.toLowerCase()}"
+          style="border-top: 1px dotted ${mainColor}; border-bottom: 1px dotted ${mainColor}"
+        >
+      `
+      let health = data.health ? data.health.value : data.value.health;
+        html += createMetricsHtml(value, data.objectinfo.name, health, mainColor);
+      html += `</div>`;
+      return html;
+    }
+
+
+        // object type list html
+    function createObjectListHtmlWithNoMetrics(data = {}, objectName = "") {
+      let html = "";
+      let { value = {} } = data;
+      let mainColor = bgColor;
+      // need to check if searchValue is contained in name, so that we don't show if it's not
+      html += `
+        <div
+          id="${objectName}"
+          class="metric-container hide-children ${objectName.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}"
+          data-id="${objectName.toLowerCase()}"
+          style="border-top: 1px dotted ${mainColor}; border-bottom: 1px dotted ${mainColor}"
+        >
+      `
+      let health = data.health ? data.health.value : "";
+        html += createMetricsHtml(value, objectName, health, mainColor, true);
+      html += `</div>`;
+      return html;
+    }
+
+
+    // object metrics html
+    function createMetricsHtml(values = {}, objectName = "", health = "", mainColor, noMetrics = false) {
+      let html = `
+        <div
+          class="metric-main"
+          data-id=${objectName}
+          onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
+        >
+          <div class="flex-me">
+            <div class="metric-object-name" style="color:${mainColor}">${objectName}</div>
+            <div class="metric-health">${health}</div>
+          </div>`;
+          if (values["latitude"] && values["longitude"] || values["Latitude"] && values["Longitude"]) {
+            html += `
+              <div class="metric-main-sub flex-me">
+                <div class="coordinates-container">
+                  <div class="coordinates">Latitude: ${values["latitude"] || values["Latitude"]}</div>
+                  <div class="coordinates">Longitude: ${values["longitude"] || values["Longitude"]}</div>
+                </div>
+                <div
+                  class="location"
+                  style="background:${mainColor}"
+                  data-latitude="${values["latitude"] || values["Latitude"]}"
+                  data-longitude="${values["longitude"] || values["Longitude"]}"
+                  onclick="var event = arguments[0] || window.event; goToOnMap(this, event)"
+                ></div>
+              </div>`
+          }
+        html += `</div>`;
+        if (noMetrics) {
+          return html;
+        }
+        html += `<div class="metrics">`;
+          html += loopThroughMetrics(values);
+          if (CONFIG[configIndex] && CONFIG[configIndex]["trends"] && CONFIG[configIndex]["trends"].length > 0) {
+            html += `
+              <div
+                class="metric-trend"
+                data-id="${objectName}"
+                onclick="var event = arguments[0] || window.event; getHistory(this, event, ${CONFIG["trends"]})"
+                style="background: ${CONFIG[configIndex]["trendsbackgroundcolor"] || '#ff00005c'}; color: ${CONFIG[configIndex]["trendscolor"] || '#ff00005c'};"
+              >
+                Trends
+              </div>
+            `
+          }
+      html += `</div>`;
+      return html;
+    }
+
+
+    function loopThroughMetrics(values = {}, html = "", isChild = null) {
+      if (Array.isArray(values)) {
+        for (let [key, value] of values.entries()) {
+          let isImage = valueTypeIsImage(value);
+          let isRtsp = !isImage ? valueTypeIsRtsp(value) : false;
+          let isVideo = !isImage && !isRtsp ? valueTypeIsVideo(value) : false;
+          let isAboveType = isImage || isRtsp || isVideo;
+          html += `
+            <div
+              class="metric ${isImage ? 'metric-image' : ''} ${typeof value === "object" ? 'metric-child' : ''}"
+              data-id="${objectName}"
+              style="display: ${isAboveType ? "block" : "flex"}; ${isAboveType ? 'text-align: center' : ''}"
+            >`
+          // if it's an image use the image
+          html += innerMetricHtml(key, value, isImage, isVideo, isRtsp);
+          html += `</div>`
+        }
+        return html;
+      } else {
+        for (let key in values) {
+          if (key.toLowerCase() === "latitude" || key.toLowerCase() === "longitude") continue;
+          let value = values[key];
+          let isImage = valueTypeIsImage(value);
+          let isRtsp = !isImage ? valueTypeIsRtsp(value) : false;
+          let isVideo = !isImage && !isRtsp ? valueTypeIsVideo(value) : false;
+          let isAboveType = isImage || isRtsp || isVideo;
+          html += `
+            <div
+              class="metric ${isImage ? 'metric-image' : ''}  ${typeof value === "object" ? 'metric-child' : ''}"
+              data-id="${objectName}"
+              style="display: ${isAboveType ? "block" : "flex"}; ${isAboveType ? 'text-align: center' : ''}"
+            >`
+          // if it's an image use the image
+          html += innerMetricHtml(key, value, isImage, isVideo, isRtsp);
+          html += `</div>`
+        }
+        return html;
+      }
+    }
+
+
+      // check if is image and return proper html
+    function innerMetricHtml(key, value, isImage = false, isVideo = false, isRtsp = false) {
+      let html = '';
+      if (!Array.isArray(value) && typeof key !== "number") {
+        html += `
+          <div>${key}</div>
+        `;
+      }
+      if (typeof value === "object") {
+          return loopThroughMetrics(value, html, true);
+      }
+      if (isImage) {
+        html += `
+          <img src="${value}" style="max-width: 100%" />
+        `;
+      } else if (isVideo) {
+        html += `
+          <video controls style="max-width: 100%">
+            <source src="${value}">
+            Your browser does not support this video type
+          </video>
+        `;
+      } else if (isRtsp) {
+        html += `
+          <img
+            class="rtsp-box"
+            id="${Math.random() * key.length + '-' + Math.random() * key.length}"
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAABCAYAAACc0f2yAAAAEElEQVR42mOsXXF0NsMwAAD1hgKHDhZICwAAAABJRU5ErkJggg=="
+            onclick="var event = arguments[0] || window.event; startVideo(this, event)"
+            style="width: 100%; min-height: 75px;"
+          />
+          <div class="click-to-load">Please click to load video</div>
+        `;
+      } else {
+        html += `
+          <div>${value}</div>
+        `;
+      }
+      return html;
+    }
+
+
+
+    // ERROR FUNCTIONS ******************************************
+    let alertMetrics = [];
+
+    function getAlerts() {
+      window.parent.n.call('metric.history', { objectname: CONFIG_ALERTS["objectnames"], begin: 1, end: Date.now(), limit: CONFIG_ALERTS["number"] }, (err, res) => {
+          if (err) {
+            console.log(err);
+            return;
+          }
+          createAlertHtml(res.body);
+      })
+    }
+
+
+    setInterval(() => {
+      getAlerts();
+    }, 3000);
+
+
+    function createAlertHtml(data = {}) {
+      let html = "";
+      let el = document.getElementById('errors');
+      for (let objectName in data) {
+        let timestampObjects = data[objectName];
+        let timestampKeys = Object.keys(timestampObjects);
+        if (timestampKeys > CONFIG_ALERTS["number"]) {
+          timestampKeys.length = CONFIG_ALERTS["number"];
+        }
+        let i = 0;
+        for (let i = 0; i < CONFIG_ALERTS["number"]; i++) {
+          let timestampKey = timestampKeys[i];
+          html += createAlertBlock(timestampObjects[timestampKey], timestampKey);
+        }
+        alertMetrics[objectName] = timestampKeys;
+      }
+      el.innerHTML = html;
+    }
+
+
+    function createAlertBlock(data = {}, timestamp) {
+      let html = "";
+      let { value = {} } = data;
+      let mainColor = changeColorShade(CONFIG_ALERTS["backgroundcolor"], 85);
+      html += `
+        <div id="${timestamp}" class="metric-container ${selectedObjects.indexOf(timestamp) > -1 ? '' : 'hide-children'}" data-id="${timestamp}">
+          <div
+            data-id="${timestamp}"
+            class="metric-main"
+            style="color:${CONFIG_ALERTS["color"]}"
+            onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
+          >
+            <div class="flex-me">
+              <div class="error-headline-values">${value[CONFIG_ALERTS["primaryfield"]]}</div>
+            </div>
+            <div class="metrics">
+              ${loopThroughMetrics(value, html)}
+            </div>
+          </div>
+        </div>
+      `;
+      return html;
+    }
+
+
+    function createAlertMetrics(value = {}, html = '') {
+      html += `<div class="metric">`
+      for (let key in value) {
+        html += innerMetricHtml(key, value);
+      }
+      return html;
+    }
+
+
+    // UTILITY FUNCTIONS *****************************************
+    // check to see if value is an image
+    function valueTypeIsImage(value) {
+      let isImage = /\.(jpeg|jpg|gif|png)$/.test(String(value));
+      let isBase64 = /^data:image.*base64/.test(String(value));
+      return isImage || isBase64;
+    }
+
+
+    // check to see if value is video
+    function valueTypeIsVideo(value) {
+      return /\.(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/.test(String(value));
+    }
+
+
+    // check to see if it's previousTimestamp
+    function valueTypeIsRtsp(value) {
+      return /^rtsp.*(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/.test(String(value));
+    }
+
+
+    // get the days worth of history to show on the table
+    function getHistory(el = {}, event = {}) {
+      event.stopPropagation();
+      let objectName = event.currentTarget.dataset.id;
+      let now = new Date();
+      // set to beginning of day
+      let begin = now.setHours(0, 0, 0, 0);
+      begin -= 604800000; // 1 week in ms
+      parent.n.call('metric.trend', { objectName, begin , end: Date.now(), fields: 'column2', limit: 500 }, (err, res) => {
+        if (err) {
+          console.log(err);
+        }
+        // TODO: create a graph here ***********************************
+        console.log(res.body);
+      });
+    }
+
+
+    // show chart based on data received
+    function showChart(data) {
+      // TODO: chart
+    }
+
+
+    // zoom into location on maps
+    function goToOnMap(context, event) {
+      event.stopPropagation();
+      let { latitude, longitude } = context.dataset;
+      window.frameElement._map.setView({ lat: latitude, lng: longitude }, 200);
+    }
+
+
+    function changeColorShade(bgColor = "#00000085", adder) {
+      return bgColor.substring(0, 7) + (adder ? adder : "");
+    }
+
+
+    function changeColors(fontColor = "#ffffff") {
+      let mainEl = document.getElementById('main-container');
+      mainEl.style.background = '#272727ef';
+      mainEl.style.color = fontColor;
+    }
+
+
+    // changes the title based on headerinfo config property
+    function changeTitle(title = "") {
+      let el = document.getElementById('title');
+      el.style.backgroundColor = changeColorShade(bgColor, null);
+      el.innerHTML = `<h2 style="margin: 0; padding: 6px 0; text-transform: capitalize;">${title}</h2>`;
+    }
+
+
+    // attach html
+    function insertHtml(elementId = "", html = "") {
+      toggleLoadingSpinner(false);
+      let el = document.getElementById(elementId);
+      el.innerHTML = html;
+    }
+
+
+    // attach html
+    function insertOuterHtml(elementId = "", html = "") {
+      toggleLoadingSpinner(false);
+      let el = document.getElementById(elementId);
+      if (el) {
+        el.outerHTML = html;
+      }
+    }
+
+
+    // append html
+    function appendHtml(elementId = "", html = "") {
+      toggleLoadingSpinner(false);
+      let el = document.getElementById(elementId);
+      el.innerHTML += html;
+    }
+
+
+    function toggleLoadingSpinner(on = false) {
+      let el = document.getElementById('loading-spinner');
+      if (on === false) {
+        el.classList.add('hidden');
+      } else {
+        el.classList.remove('hidden');
+      }
+    }
+
+
+
+  </script>
+</body>
+</html>

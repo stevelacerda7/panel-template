@@ -14,62 +14,71 @@
       timeFormat: 'en-us' // javascript options
     }
 
+    const CONFIG_ALERTS = {
+      objectnames: ['alarm_sensors'],
+      primaryfield: 'description',
+      number: 5,
+      backgroundcolor: '#ff0000',
+      color: DEFAULT_COLOR,
+    }
+
     const CONFIG = [
       {
-        objecttype: 'cdpparking',
-        backgroundcolor: '#0031ff75',
+        uielements: 'Image 1', // no spaces
+        backgroundcolor: '#00479d',
         color: DEFAULT_COLOR,
-        imagesrc: '/proxy/file/resource/parking01.png',
-        title: 'Parking',
-        // trends: [
-        // { type: 'line', metric: 'column1' },
-        // { type: 'bar', metric: 'column1' },
-        // ],
-        // trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
-        // trendscolor: TRENDS_DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/server.png',
+        title: 'Servers',
       },
       {
-        objecttype: 'cdplights',
-        backgroundcolor: '#ffc40075',
+        uielements: 'Image 9,Image 13',
+        objectnames: 'N3N-CAM-02,N3N-CAM-03', // no spaces
+        backgroundcolor: '#32b16c',
         color: DEFAULT_COLOR,
-        imagesrc: '/proxy/file/resource/light01.png',
-        title: 'Lighting',
-        // trends: [
-        // { type: 'line', metric: 'column1' },
-        // { type: 'bar', metric: 'column1' },
-        // ],
-        // trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
-        // trendscolor: TRENDS_DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/Camera.png',
+        title: 'Cameras',
       },
       {
-        objecttype: 'cdpenv',
-        backgroundcolor: '#1fbd2f75',
+        uielements: 'Image 22', // no spaces
+        backgroundcolor: '#a84200',
         color: DEFAULT_COLOR,
-        imagesrc: '/proxy/file/resource/env01.png',
-        title: 'Env',
-        // trends: [
-        // { type: 'line', metric: 'column1' },
-        // { type: 'bar', metric: 'column1' },
-        // ],
-        // trendsbackgroundcolor: TRENDS_DEFAULT_BG_COLOR,
-        // trendscolor: TRENDS_DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/fire.png',
+        title: 'Fire Sensors',
       },
-
+      {
+        uielements: 'Image 23',
+        backgroundcolor: '#eb6877',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/Ultrasonic.png',
+        title: 'Door Sensors',
+      },
+      {
+        uielements: 'Image 12',
+        backgroundcolor: '#8fc31f',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/Motion_03.png',
+        title: 'Motion Sensors',
+      },
+      {
+        uielements: 'Image 10',
+        backgroundcolor: '#ffc400',
+        color: DEFAULT_COLOR,
+        imagesrc: '/proxy/file/resource/illumination_01.png',
+        title: 'Lights',
+      },
       // {
-      //   objectnames: 'marker5,marker7', // no spaces
-      //   backgroundcolor: '#80809575',
+      //   uielements: 'image1,image2',
+      //   backgroundcolor: '#ffc40075',
       //   color: DEFAULT_COLOR,
-      //   imagesrc: '/proxy/file/resource/big-o.png',
-      //   title: 'Markers 5 & 7',
+      //   imagesrc: '/proxy/file/resource/illumination_01.png',
+      //   title: 'Lights',
       // },
       // {
-      //   objectname: 'marker8', // no spaces
-      //   backgroundcolor: '#98652375',
+      //   uielements: 'GPS1',
+      //   backgroundcolor: '#ffc40075',
       //   color: DEFAULT_COLOR,
-      //   imagesrc: '/proxy/file/resource/big-o.png',
-      //   alerts: true,
-      //   alertheader: 'column2',
-      //   title: 'Alerts',
+      //   imagesrc: '/proxy/file/resource/illumination_01.png',
+      //   title: 'Lights',
       // },
     ]
 
@@ -79,6 +88,7 @@
   <style>
     :root {
       --triangle-color: #00000098;
+      --alerts-title-background: #ff0000;
     }
     body {
       height: 100%;
@@ -119,7 +129,6 @@
     }
     #main-container {
       position: absolute;
-      background: #25689575;
       height: 100%;
       width: 100%;
       margin-top: 15px;
@@ -127,7 +136,42 @@
     #panel {
       height: calc(100% - 160px);
       width: 100%;
+      overflow: unset;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    #panel > div {
+      position: absolute;
+      height: 50%;
+      top: 0;
       overflow: auto;
+      width: 100%;
+    }
+    #alerts {
+      top: calc(50% + 48px) !important;
+    }
+    #errors .metric-main {
+      margin-bottom: 1px;
+    }
+    #alerts .error-headline-values {
+      color: var(--alerts-title-background);
+      font-weight: bold;
+    }
+    .alerts-title {
+      padding: 0px 8px;
+      background-color: var(--alerts-title-background);
+      top: 50% !important;
+      height: 48px !important;
+    }
+   .alerts-title h2 {
+      margin: 0;
+      padding: 6px 0;
+      text-transform: capitalize;
+      color: #ffffff;
+    }
+    #alerts .metric-container {
+      border-bottom: 1px dotted var(--alerts-title-background);
     }
     #search {
       width: 90%;
@@ -149,14 +193,20 @@
     .metric-container.hide-children  .metrics {
       display: none;
     }
+    #errors .metric-container:first-child .metrics {
+      display: block;
+    }
     .metric-container {
-      margin: .1rem 0 0 0;
+      margin: 0;
       cursor: pointer;
     }
     .metric-main {
       padding: .4rem;
       flex-wrap: wrap;
+    }
+    .metric-object-name {
       word-break: break-all;
+      font-weight: bold;
     }
     .flex-me {
       display: flex;
@@ -197,6 +247,12 @@
     }
     .metric > div:first-child {
       margin-right: .4rem;
+    }
+    .metric > div:nth-child(2) {
+      word-break: break-all;
+    }
+    .metric-child > div {
+      word-break: unset !important;
     }
     .timestamp {
       font-size: 0.7rem;
@@ -240,18 +296,16 @@
   </style>
 
 
-</head>
-<body id="body">
+  </head>
+  <body id="body">
   <div id="image-buttons-container"></div>
 
   <div id="main-container">
+    <div id="title" style="padding: 0 .4rem"></div>
+
     <div id="search">
       <input type="text" oninput="searchIt(this)" placeholder="Search..." />
     </div>
-
-
-    <div id="title" style="padding: 0 .4rem"></div>
-
 
     <div id="panel">
       <div id="loading-spinner">
@@ -259,9 +313,12 @@
         <img src="data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjAiIHdpZHRoPSI2NHB4IiBoZWlnaHQ9IjY0cHgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoMTM1IDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiNiZWJlYmUiIHRyYW5zZm9ybT0icm90YXRlKDE4MCA2NCA2NCkiLz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjOTc5Nzk3IiB0cmFuc2Zvcm09InJvdGF0ZSgyMjUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iIzZlNmU2ZSIgdHJhbnNmb3JtPSJyb3RhdGUoMjcwIDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiMzYzNjM2MiIHRyYW5zZm9ybT0icm90YXRlKDMxNSA2NCA2NCkiLz48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgdmFsdWVzPSIwIDY0IDY0OzQ1IDY0IDY0OzkwIDY0IDY0OzEzNSA2NCA2NDsxODAgNjQgNjQ7MjI1IDY0IDY0OzI3MCA2NCA2NDszMTUgNjQgNjQiIGNhbGNNb2RlPSJkaXNjcmV0ZSIgZHVyPSI3MjBtcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiPjwvYW5pbWF0ZVRyYW5zZm9ybT48L2c+PGc+PGNpcmNsZSBmaWxsPSIjMDAwIiBjeD0iNjMuNjYiIGN5PSI2My4xNiIgcj0iMTIiLz48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjcyMG1zIiBiZWdpbj0iMHMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxOzA7MSIvPjwvZz48L3N2Zz4=" />
       </div>
       <!-- place error messages in here -->
-      <div id="errors"></div>
       <div id="object-types-container"></div>
-      <div id="map-player"></div>
+      <div class="title alerts-title">
+        <h2>Alerts</h2>
+      </div>
+      <div id="alerts">
+        <div id="errors"></div>
     </div>
   </div>
 
@@ -336,15 +393,17 @@
   <!-- panel body script -->
   <script>
     let { frameElement: { contentWindow : { parent = {} } = {} } = {} } = window;
-    let objectType = "";
-    let oldObjectType = "";
     let objectName = "";
-    let objectNames = [];
-    let objects = [];
+    let startSetIntervalStarted = false;
     let metrics = {};
     let searchValue = "";
     let configIndex = null;
+    let oldUielements = "";
+    let uielements = "";
     let bgColor = "";
+    let fontColor = "";
+    let counter = 0;
+    let selectedObjects = [];
 
     // search bar
     function searchIt(event = {}) {
@@ -366,249 +425,173 @@
     function showMetricContainer(el, event) {
       event.stopPropagation();
       el.parentElement.classList.toggle('hide-children');
+      let index = selectedObjects.indexOf(el.dataset.id);
+      if (index > -1) {
+        selectedObjects.splice(index, 1);
+      } else {
+        selectedObjects.push(el.dataset.id);
+      }
     }
 
 
     // listen for object type event
     document.addEventListener('panel-button-fire', function(evt = {}) {
+      if (evt.detail.uielements === uielements) return; // already selected this tab, don't do anything
+      counter = 0;
+      selectedObjects = [];
       let { detail = {} } = evt;
-      // if already the selected objectType, just return
-      if (detail.objecttype == objectType) return;
-      // set the oldObjectType to what is currently set as objectType because we are going to
-      // set the objectType right now
-      oldObjectType = objectType;
-      if (detail.objecttype) {
-        objectType = detail.objecttype;
-      } else if (detail.objectnames) {
-        objectType = detail.objectnames;
-        objectNames = detail.objectnames.split(',');
-        objectName = detail.objectnames;
-      } else if (detail.objectname) {
-        objectType = detail.objectname;
-        objectNames = [detail.objectname];
-        objectName = detail.objectname;
-      }
-      // the button has a config index data attribute that we can use to tell where
-      // the
-      configIndex = detail.configindex;
-      // get all objects for that objectType
-      // get metrics from current metrics object if already exists,
-      // otherwise go get the metrics
-      if (objectType === oldObjectType) {
-        return;
-      }
+      oldUielements = uielements;
+      uielements = detail.uielements;
       bgColor = detail.backgroundcolor;
-      // change background and font color based on config
-      changeColors(bgColor, detail.color);
-      // change header/title based on headerinfo field in config
-      if (detail.title) {
-        changeTitle(detail.title, bgColor, detail.color);
-      }
+      fontColor = detail.color;
       insertHtml('object-types-container', '');
-      toggleLoadingSpinner(true);
-      if (metrics[objectType] && metrics[objectType].singleObject) {
-        compareMetrics(metrics[objectType], metrics[objectType], objectType, true);
-      } else if (metrics[objectType]) {
-        compareMetrics(metrics[objectType], metrics[objectType], objectType);
-      } else if (detail.objecttype) {
-        getObjectsByType(detail.objecttype);
-      } else if (detail.objectnames) {
-        // use first objectName as objectTypeName when using 'object1, object2' format
-        getObjectMetrics(objectNames, objectType);
-      } else if (detail.objectname) {
-        getObjectMetrics(objectNames, objectType, CONFIG_SCRIPT.historyBuffer);
-      }
+      changeColors(fontColor);
+      changeTitle(detail.title);
+      getDataFromMap(detail.uielements);
+      oldUielements = uielements;
     });
 
 
-    function changeColors(bgColor = "#00000085", fontColor = "#ffffff") {
-      let mainEl = document.getElementById('main-container');
-      mainEl.style.backgroundColor = changeColorShade(bgColor, 95);
-      mainEl.style.color = fontColor;
-    }
-
-
-    function changeColorShade(bgColor = "#00000085", adder = 85) {
-      return bgColor.substring(0, 7) + adder;
-    }
-
-
-    // changes the title based on headerinfo config property
-    function changeTitle(title = "", bgColor = "#00000085", fontColor = "#ffffff") {
-      let el = document.getElementById('title');
-      el.style.backgroundColor = changeColorShade(bgColor, 98);
-      el.innerHTML = `<h2 style="margin: 4px 0; padding: 6px 0; text-transform: capitalize;">${title}</h2>`;
-    }
-
-
-    // get objects by object type
-    function getObjectsByType(ObjectTypeName = null) {
-      if (!ObjectTypeName) return null;
-      let objectTypeList = parent.n.call('object.list', { query: { ObjectTypeName } }, (err, res = {}) => {
-        if (err) {
-          return createError("Failed to retrieve the object list by type. Please try reselecting the object type button.");
+    function getDataFromMap(uielements = "") {
+      let uiEls = uielements.split(',');
+      for (let i = 0; i < uiEls.length; i++) {
+        if (uiEls[i].length === 0) continue;
+        let el = window.frameElement._map.do.getUIE(uiEls[i]);
+        if (el && el.ClassName === "Image") {
+          let object = {};
+          // if (metrics[uiEls[i]] == true) {
+          //   // just keep going and skip next else if statement
+          // } else if (!(el && el.layer && el.layer.options && el.layer.options.metric) && counter < 1) {
+          //   return setTimeout(function() {
+          //     counter++;
+          //     getDataFromMap(uielements);
+          //   }, 1000);
+          // }
+          object[el['objectName']] = el.layer.options.metric || true;
+          compareMetrics(uiEls[i], object, el['objectName']);
+          metrics[uiEls[i]] = [el['objectName']];
+          metrics[uiEls[i]] = el.layer.options.metric || true;
+        } else if (el) {
+          getObjectsFromMap(el, compareGPSMetrics);
         }
-        // just get the object names and store in an array
-        objects = res.body.map(obj => {
-          return obj.Name;
-        });
-        // get the metrics for the list of objects
-        getObjectMetrics(objects, ObjectTypeName);
-      });
+      }
     }
 
 
-    // get object metrics
-    function getObjectMetrics(ObjectNames = [], objectTypeName = "", limit = 1) {
-      let objType = objectType;
-      parent.n.call('metric.history', { ObjectName: ObjectNames, Begin: 1, End: Date.now(), Limit: limit }, (err, res = {}) => {
-        if (err) {
-          return createError("Failed to retrieve object metrics. Please try reselecting the object type button.");
-        }
-        // if the user has clicked to another objectType, just cancel the request
-        if (objType !== objectTypeName) return;
-        if (limit === 1) {
-          compareMetrics(metrics[objectTypeName], res.body, objectTypeName);
-        } else {
-          compareMetrics(metrics[objectTypeName], res.body, objectTypeName, true);
-        }
-        startSetInterval();
-      });
+    function startSetInterval() {
+      setInterval(function() {
+        getDataFromMap(uielements);
+        startSetIntervalStarted = true;
+      }, 5000);
+    }
+
+
+    function compareMetrics(uielement, object, objectName) {
+      if (oldUielements !== uielements) {
+        createHtml(object);
+      } else if (metrics[uielement] && metrics[uielement]['time'] && metrics[uielement]['time'] === object[objectName].time) {
+        return;
+      } else {
+        createHtml(object);
+      }
+    }
+
+
+    function compareGPSMetrics(uielement, objects) {
+      createHtml(objects);
+    }
+
+
+    function getObjectsFromMap(el = {}, cb = () => {}) {
+      let objects = el.getObjects();
+      if (!objects) {
+        setTimeout(function() {
+          getObjectsFromMap(el, cb);
+        }, 100);
+      } else {
+        metrics[el.Name] = objects;
+        cb(el.Name, objects);
+      }
     }
 
 
     // compare metrics and create a new metrics html section
     // and attach it in place of the old html
-    function compareMetrics(oldMetrics = {}, newMetrics = {}, objectTypeName = "", singleObject = false) {
-      let previousKey = "";
-      let previousTimestamp = "";
-      let doNotInsert = true;
-      let html = "";
-      metrics[objectTypeName] = newMetrics;
-      if (singleObject && metrics[objectTypeName]) {
-        metrics[objectTypeName].singleObject = true;
-      }
-      let objectNameKeys = Object.keys(newMetrics);
-      objectNameKeys.sort();
-      for (let key of objectNameKeys) {
-        let newMetricsTimestamp = Object.keys(newMetrics[key]);
-        let oldMetricsTimestamp = [];
-        if (newMetricsTimestamp.length === 0) continue;
-        if (oldMetrics[key]) {
-          oldMetricsTimestamp = Object.keys(oldMetrics[key]);
+    function createHtml(data = {}) {
+      if (!startSetIntervalStarted) startSetInterval();
+      let html = '';
+      for (let key in data) {
+        if (data[key] && data[key].options && data[key].options.metric) {
+          html = createObjectListHtml(data[key].options.metric)
+        } else if (data[key] && data[key]['value']) {
+          html += createObjectListHtml(data[key]);
+        } else if (data[key] === true) {
+          // for cameras and other objects where there are no metrics
+          html += createObjectListHtmlWithNoMetrics(data, key);
+        } else {
+          html += createObjectListHtml(data[key]);
         }
-        if (objectType !== objectTypeName) return;
-        // if we're looking at a single object, then we need the history for that single object,
-        // not just the last metric
-        if (singleObject) {
-          for (let i = newMetricsTimestamp.length - 1; i >= 0; i--) {
-            let timestamp = newMetricsTimestamp[i];
-            if (timestamp === "singleObject") continue;
-            if (oldObjectType != objectTypeName) {
-              html += createSingleObjectListHtml(newMetrics[key][timestamp])
-              continue;
-            }
-            // if the metrics are the same, only change that metric container
-            html = createSingleObjectListHtml(newMetrics[key][timestamp])
-            // if the element already exists, insert into existing dom element
-            // else if it doesn't append after previousKey, so we retain the order
-            let currentEl = document.getElementById(timestamp);
-            if (currentEl) {
-              insertOuterHtml(timestamp, html);
-              if (!currentEl.classList.contains('hide-children')) {
-                currentEl = document.getElementById(timestamp);
-                currentEl.classList.remove('hide-children');
-              }
-            } else {
-              let el = document.getElementById('object-types-container');
-              el.innerHTML = html + el.innerHTML;
-            }
-            doNotInsert = false;
-            previousTimestamp = timestamp;
-          }
-          continue;
+        if (!document.getElementById(key)) {
+          appendHtml('object-types-container', html);
+        } else {
+          insertOuterHtml(key, html);
         }
-        if (oldObjectType != objectTypeName) {
-          html += createObjectListHtml(newMetrics[key][newMetricsTimestamp[newMetricsTimestamp.length - 1]])
-          continue;
-        } else if (newMetricsTimestamp[newMetricsTimestamp.length - 1] !== oldMetricsTimestamp[oldMetricsTimestamp.length - 1]) {
-          // if the metrics are the same, only change that metric container
-          html = createObjectListHtml(newMetrics[key][newMetricsTimestamp[newMetricsTimestamp.length - 1]])
-          // if the element already exists, insert into existing dom element
-          // else if it doesn't append after previousKey, so we retain the order
-          let currentEl = document.getElementById(key);
-          if (currentEl) {
-            insertOuterHtml(key, html);
-            if (!currentEl.classList.contains('hide-children')) {
-              currentEl = document.getElementById(key);
-              currentEl.classList.remove('hide-children');
-            }
-          } else {
-            let el = document.getElementById(previousKey);
-            if (el) {
-              el.insertAdjacentHTML('afterend', html);
-            }
-          }
-        }
-        doNotInsert = false;
-        previousKey = Object.keys(newMetrics[key]).length > 0 ? key : previousKey;
-      }
-      oldObjectType = objectTypeName;
-      if (doNotInsert) {
-        insertHtml('object-types-container', html);
       }
     }
 
 
     // object type list html
-    function createObjectListHtml(data = {}, singleObject = false) {
+    function createObjectListHtml(data = {}) {
       let html = "";
       let { value = {} } = data;
-      let mainColor = changeColorShade(bgColor, 85);
+      let mainColor = bgColor;
       // need to check if searchValue is contained in name, so that we don't show if it's not
       html += `
         <div
           id="${data.objectinfo.name}"
-          class="metric-container hide-children ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}"
+          class="metric-container ${selectedObjects.indexOf(data.objectinfo.name) > -1 ? '' : 'hide-children'} ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}"
           data-id="${data.objectinfo.name.toLowerCase()}"
+          style="border-top: 1px dotted ${mainColor}; border-bottom: 1px dotted ${mainColor}"
         >
       `
-        html += createMetricsHtml(value, data.objectinfo.name, data.health, mainColor);
+      let health = data.health ? data.health.value : data.value.health;
+        html += createMetricsHtml(value, data.objectinfo.name, health, mainColor);
       html += `</div>`;
       return html;
     }
 
 
-    // object type list html for a single object
-    function createSingleObjectListHtml(data = {}) {
+        // object type list html
+    function createObjectListHtmlWithNoMetrics(data = {}, objectName = "") {
       let html = "";
       let { value = {} } = data;
-      let mainColor = changeColorShade(bgColor, 85);
+      let mainColor = bgColor;
       // need to check if searchValue is contained in name, so that we don't show if it's not
       html += `
         <div
-          id="${data.meta.timestamp}"
-          class="metric-container hide-children ${data.objectinfo.name.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}"
-          data-id="${data.objectinfo.name.toLowerCase()}"
+          id="${objectName}"
+          class="metric-container hide-children ${objectName.toLowerCase().indexOf(searchValue.toLowerCase()) > -1 ? '' : 'hidden'}"
+          data-id="${objectName.toLowerCase()}"
+          style="border-top: 1px dotted ${mainColor}; border-bottom: 1px dotted ${mainColor}"
         >
       `
-        html += createSingleMetricsHtml(value, data.meta ? data.meta.timestamp : data.objectinfo.name, data.health, mainColor);
+      let health = data.health ? data.health.value : "";
+        html += createMetricsHtml(value, objectName, health, mainColor, true);
       html += `</div>`;
       return html;
     }
 
 
-
     // object metrics html
-    function createMetricsHtml(values = {}, objectName = "", health = "", mainColor) {
+    function createMetricsHtml(values = {}, objectName = "", health = "", mainColor, noMetrics = false) {
       let html = `
         <div
           class="metric-main"
-          style="background: ${mainColor};"
+          data-id=${objectName}
           onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
         >
           <div class="flex-me">
-            <div class="metric-object-name">${objectName}</div>
+            <div class="metric-object-name" style="color:${mainColor}">${objectName}</div>
             <div class="metric-health">${health}</div>
           </div>`;
           if (values["latitude"] && values["longitude"] || values["Latitude"] && values["Longitude"]) {
@@ -620,7 +603,7 @@
                 </div>
                 <div
                   class="location"
-                  style="background:${changeColorShade(mainColor, 99)}"
+                  style="background:${mainColor}"
                   data-latitude="${values["latitude"] || values["Latitude"]}"
                   data-longitude="${values["longitude"] || values["Longitude"]}"
                   onclick="var event = arguments[0] || window.event; goToOnMap(this, event)"
@@ -628,6 +611,9 @@
               </div>`
           }
         html += `</div>`;
+        if (noMetrics) {
+          return html;
+        }
         html += `<div class="metrics">`;
           html += loopThroughMetrics(values);
           if (CONFIG[configIndex] && CONFIG[configIndex]["trends"] && CONFIG[configIndex]["trends"].length > 0) {
@@ -643,32 +629,6 @@
             `
           }
       html += `</div>`;
-      return html;
-    }
-
-
-    // create metrics for a single object
-    function createSingleMetricsHtml(values = {}, time, health = "", mainColor) {
-      let date = new Date(time);
-      let alertHeader = CONFIG[configIndex].alertheader;
-      let html = `
-        <div
-          class="metric-main"
-          style="background: ${mainColor};"
-          onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
-        >
-          <div class="metric-object-name">
-            ${alertHeader ? '<span>' + values[alertHeader] + '</span>' : ''}
-          </div>
-          <div class="metric-health">${health}</div>
-          <span class="timestamp">${date.toLocaleDateString(CONFIG_SCRIPT.dateFormat)} ${date.toLocaleTimeString(CONFIG_SCRIPT.timeFormat)}</span>
-        </div>
-        <div class="metrics">
-      `;
-          html += loopThroughMetrics(values);
-      html += `
-        </div>
-      `;
       return html;
     }
 
@@ -714,27 +674,7 @@
     }
 
 
-    // check to see if value is an image
-    function valueTypeIsImage(value) {
-      let isImage = /\.(jpeg|jpg|gif|png)$/.test(String(value));
-      let isBase64 = /^data:image.*base64/.test(String(value));
-      return isImage || isBase64;
-    }
-
-
-    // check to see if value is video
-    function valueTypeIsVideo(value) {
-      return /\.(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/.test(String(value));
-    }
-
-
-    // check to see if it's previousTimestamp
-    function valueTypeIsRtsp(value) {
-      return /^rtsp.*(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/.test(String(value));
-    }
-
-
-    // check if is image and return proper html
+      // check if is image and return proper html
     function innerMetricHtml(key, value, isImage = false, isVideo = false, isRtsp = false) {
       let html = '';
       if (!Array.isArray(value) && typeof key !== "number") {
@@ -775,6 +715,102 @@
       return html;
     }
 
+
+
+    // ERROR FUNCTIONS ******************************************
+    let alertMetrics = [];
+
+    function getAlerts() {
+      window.parent.n.call('metric.history', { objectname: CONFIG_ALERTS["objectnames"], begin: 1, end: Date.now(), limit: CONFIG_ALERTS["number"] }, (err, res) => {
+          if (err) {
+            console.log(err);
+            return;
+          }
+          createAlertHtml(res.body);
+      })
+    }
+
+
+    setInterval(() => {
+      getAlerts();
+    }, 3000);
+
+
+    function createAlertHtml(data = {}) {
+      let html = "";
+      let el = document.getElementById('errors');
+      for (let objectName in data) {
+        let timestampObjects = data[objectName];
+        let timestampKeys = Object.keys(timestampObjects);
+        if (timestampKeys > CONFIG_ALERTS["number"]) {
+          timestampKeys.length = CONFIG_ALERTS["number"];
+        }
+        let i = 0;
+        for (let i = 0; i < CONFIG_ALERTS["number"]; i++) {
+          let timestampKey = timestampKeys[i];
+          html += createAlertBlock(timestampObjects[timestampKey], timestampKey);
+        }
+        alertMetrics[objectName] = timestampKeys;
+      }
+      el.innerHTML = html;
+    }
+
+
+    function createAlertBlock(data = {}, timestamp) {
+      let html = "";
+      let { value = {} } = data;
+      let mainColor = changeColorShade(CONFIG_ALERTS["backgroundcolor"], 85);
+      html += `
+        <div id="${timestamp}" class="metric-container ${selectedObjects.indexOf(timestamp) > -1 ? '' : 'hide-children'}" data-id="${timestamp}">
+          <div
+            data-id="${timestamp}"
+            class="metric-main"
+            style="color:${CONFIG_ALERTS["color"]}"
+            onclick="var event = arguments[0] || window.event; showMetricContainer(this, event)"
+          >
+            <div class="flex-me">
+              <div class="error-headline-values">${value[CONFIG_ALERTS["primaryfield"]]}</div>
+            </div>
+            <div class="metrics">
+              ${loopThroughMetrics(value, html)}
+            </div>
+          </div>
+        </div>
+      `;
+      return html;
+    }
+
+
+    function createAlertMetrics(value = {}, html = '') {
+      html += `<div class="metric">`
+      for (let key in value) {
+        html += innerMetricHtml(key, value);
+      }
+      return html;
+    }
+
+
+    // UTILITY FUNCTIONS *****************************************
+    // check to see if value is an image
+    function valueTypeIsImage(value) {
+      let isImage = /\.(jpeg|jpg|gif|png)$/.test(String(value));
+      let isBase64 = /^data:image.*base64/.test(String(value));
+      return isImage || isBase64;
+    }
+
+
+    // check to see if value is video
+    function valueTypeIsVideo(value) {
+      return /\.(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/.test(String(value));
+    }
+
+
+    // check to see if it's previousTimestamp
+    function valueTypeIsRtsp(value) {
+      return /^rtsp.*(webm|ogg|mp4|mp3|wav|avi|m4a|m4v|mov|3gp|mkv|ogv|ogm|oga)$/.test(String(value));
+    }
+
+
     // get the days worth of history to show on the table
     function getHistory(el = {}, event = {}) {
       event.stopPropagation();
@@ -807,11 +843,23 @@
     }
 
 
-    // if there's an error, show in panel
-    function createError(message) {
-      let el = document.getElementById('errors');
-      let html = `<div>${message}</div>`;
-      insertHtml(el, html);
+    function changeColorShade(bgColor = "#00000085", adder) {
+      return bgColor.substring(0, 7) + (adder ? adder : "");
+    }
+
+
+    function changeColors(fontColor = "#ffffff") {
+      let mainEl = document.getElementById('main-container');
+      mainEl.style.background = '#272727ef';
+      mainEl.style.color = fontColor;
+    }
+
+
+    // changes the title based on headerinfo config property
+    function changeTitle(title = "") {
+      let el = document.getElementById('title');
+      el.style.backgroundColor = changeColorShade(bgColor, null);
+      el.innerHTML = `<h2 style="margin: 0; padding: 6px 0; text-transform: capitalize;">${title}</h2>`;
     }
 
 
@@ -827,9 +875,11 @@
     function insertOuterHtml(elementId = "", html = "") {
       toggleLoadingSpinner(false);
       let el = document.getElementById(elementId);
-      el.outerHTML = html;
+      if (el) {
+        el.outerHTML = html;
+      }
     }
-
+  
 
     // append html
     function appendHtml(elementId = "", html = "") {
@@ -849,19 +899,7 @@
     }
 
 
-    // kick off setInterval to getObjectsByType every n seconds
-    function startSetInterval() {
-      if (objectName === objectType && objectNames.length > 1) {
-        getObjectMetrics(objectNames, objectType)
-      } else if (objectName === objectType) {
-        getObjectMetrics(objectNames, objectType, CONFIG_SCRIPT.historyBuffer)
-      } else {
-        getObjectsByType(objectType);
-      }
-    }
-
-
 
   </script>
-</body>
-</html>
+  </body>
+  </html>
