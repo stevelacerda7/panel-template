@@ -409,7 +409,7 @@
     function searchIt(event = {}) {
       let { value = "" } = event;
       searchValue = value;
-      let els = document.getElementsByClassName('metric-container');
+      let els = document.querySelectorAll('#object-types-container .metric-container');
       for (let i = 0; i < els.length; i++) {
         let passesTest = els[i].dataset.id.toLowerCase().indexOf(value.toLowerCase()) > -1 ? true : false;
         if (!passesTest) {
@@ -879,7 +879,7 @@
         el.outerHTML = html;
       }
     }
-  
+
 
     // append html
     function appendHtml(elementId = "", html = "") {
