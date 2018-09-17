@@ -12,6 +12,7 @@
       historyBuffer: 200, // number of items to retrieve in limit for metric.history
       dateFormat: 'en-us', // javascript options
       timeFormat: 'en-us', // javascript options
+      backgroundcolor: '#272727d3',
     }
 
     const CONFIG_ALERTS = {
@@ -25,21 +26,21 @@
     const CONFIG = [
       {
         uielements: 'lights-gps', // no spaces comma separated
-        backgroundcolor: '#ffc400',
+        backgroundcolor: '#faca00',
         color: DEFAULT_COLOR,
         imagesrc: '/proxy/file/resource/light01.png',
         title: 'Lights',
       },
       {
         uielements: 'env-gps', // no spaces comma separated
-        backgroundcolor: '#1fbd2f',
+        backgroundcolor: '#009944',
         color: DEFAULT_COLOR,
         imagesrc: '/proxy/file/resource/env01.png',
         title: 'Environment',
       },
       {
         uielements: 'parking-gps', // no spaces comma separated
-        backgroundcolor: '#0031ff',
+        backgroundcolor: '#00a0e9',
         color: DEFAULT_COLOR,
         imagesrc: '/proxy/file/resource/parking01.png',
         title: 'Parking',
@@ -54,12 +55,17 @@
       --triangle-color: #00000098;
       --alerts-title-background: #ff0000;
     }
+    @font-face {
+      font-family: att;
+      src: url(/proxy/file/resource/ATTAleckSans_Rg.ttf);
+    }
+
     body {
       height: 100%;
       margin: 0;
       font-size: 16px;
       overflow: hidden;
-      font-family: Arial, Tahoma;
+      font-family: att, Arial, Tahoma;
       line-height: 1.5;
       padding-top: 5px;
     }
@@ -69,18 +75,43 @@
       align-items: center;
     }
     .image {
-      flex: 1 1 5%;
+      flex: 1 1 auto;
       text-align: center;
       position: relative;
       cursor: pointer;
       height: 40px;
     }
+    .image .image-container {
+      width: 40px;
+      margin-left: auto;
+      margin-right: auto;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 5px;
+    }
+    .image.selected .triangle {
+      margin-right: auto;
+      width: 25px;
+      height: 25px;
+      background: white;
+      margin-left: auto;
+      margin-right: ;
+      transform: rotate(45deg);
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -31px;
+      display: block;
+    }
+    .image .triangle {
+      display: none;
+    }
     #image-buttons-container img {
       max-width: 100%;
-      border-radius: 50%;
       width: 30px;
       height: 30px;
-      margin-bottom: 1rem;
     }
     div.selected span::after {
       position: absolute;
@@ -112,6 +143,9 @@
       overflow: auto;
       width: 100%;
     }
+    #title {
+      color: #ffffff;
+    }
     #alerts {
       top: calc(50% + 48px) !important;
     }
@@ -131,7 +165,7 @@
    .alerts-title h2 {
       margin: 0;
       padding: 6px 0;
-      text-transform: capitalize;
+      text-transform: uppercase;
       color: #ffffff;
     }
     #alerts .metric-container {
@@ -147,12 +181,19 @@
       border-radius: .2rem;
       border: none;
       padding: .4rem;
+      border: 1px solid #cccccc;
     }
     #loading-spinner {
       position: absolute;
       top: 45%;
       left: 50%;
       transform: translateX(-50%);
+    }
+    #loading-spinner > img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
     .metric-container.hide-children  .metrics {
       display: none;
@@ -171,6 +212,7 @@
     .metric-object-name {
       word-break: break-all;
       font-weight: bold;
+      flex: 1 1 75%;
     }
     .flex-me {
       display: flex;
@@ -190,9 +232,6 @@
     .metric-object-name,
     .metric-health {
       padding: .2rem 0;
-    }
-    .metric-object-name {
-      flex: 0 0 75%;
     }
     .metric-health {
       flex: 0 0 25%;
@@ -254,14 +293,37 @@
       margin-right: auto;
       text-align: center;
     }
+    .health {
+      position: relative;
+      text-align: center;
+    }
+    .health > span {
+      left: 0;
+      right: 0;
+      margin-right: 0;
+      margin-left: 0;
+      position: absolute;
+
+    }
+    .health-metric {
+      font-weight: bold;
+      font-size: 12px;
+      z-index: 1;
+      top: 2px;
+    }
+    .heart {
+      font-size: 28px;
+      top: -6px;
+    }
+
     .hidden {
       display: none;
     }
   </style>
 
 
-</head>
-<body id="body">
+  </head>
+  <body id="body">
   <div id="image-buttons-container"></div>
 
   <div id="main-container">
@@ -292,8 +354,14 @@
   <script>
     // use config to place buttons in DOM
     let buttonsHtml = "";
+    let selected = 0;
     for (let i = 0; i < CONFIG.length; i++) {
-      buttonsHtml += `<div class="image ${i === 0 ? 'selected' : ''}" data-configindex="${i}"`
+      let currBgColor = CONFIG[i]["backgroundcolor"];
+      buttonsHtml += `
+        <div
+          class="image ${i === selected ? 'selected' : ''}"
+          data-configindex="${i}"
+        `
       for (let key in CONFIG[i]) {
         buttonsHtml += `
             data-${key}="${CONFIG[i][key]}"
@@ -301,9 +369,12 @@
       }
       buttonsHtml += `
           >
-            <span>
+            <div class="image-container" style="background: ${CONFIG[i]["backgroundcolor"]}">
               <img src="${CONFIG[i].imagesrc}" />
-            </span>
+            </div>
+            <div class="triangle" style="background: ${currBgColor};"
+            >
+            </div>
           </div>
         `
     }
@@ -348,7 +419,9 @@
     // need to fire off an event choosing the first item in config,
     // otherwise nothing will be shown on the initial load
     window.onload = function () {
-      imageEls[0].click();
+      setTimeout(function() {
+        imageEls[0].click();
+      }, 1000);
     };
   </script>
 
@@ -443,10 +516,10 @@
 
 
     function startSetInterval() {
-      setInterval(function() {
-        getDataFromMap(uielements);
-        startSetIntervalStarted = true;
-      }, 5000);
+      // setInterval(function() {
+      //   getDataFromMap(uielements);
+      //   startSetIntervalStarted = true;
+      // }, 5000);
     }
 
 
@@ -548,6 +621,14 @@
 
     // object metrics html
     function createMetricsHtml(values = {}, objectName = "", health = "", mainColor, noMetrics = false) {
+      let healthColor = "";
+      if (health > 75) {
+        healthColor = "#009944";
+      } else if (health > 40) {
+        healthColor = "#ff7800";
+      } else {
+        healthColor = "#ff0000";
+      }
       let html = `
         <div
           class="metric-main"
@@ -556,8 +637,18 @@
         >
           <div class="flex-me">
             <div class="metric-object-name" style="color:${mainColor}">${objectName}</div>
-            <div class="metric-health">${health}</div>
-          </div>`;
+          `;
+          if (health) {
+            html += `
+              <div class="metric-health">
+                <div class="health">
+                  <span class="health-metric">${health}</span>
+                  <span class="heart" style="color:${healthColor};">&#x2764;</span>
+                </div>
+              </div>
+            `;
+          }
+          html += `</div>`;
           if (values["latitude"] && values["longitude"] || values["Latitude"] && values["Longitude"]) {
             html += `
               <div class="metric-main-sub flex-me">
@@ -814,7 +905,7 @@
 
     function changeColors(fontColor = "#ffffff") {
       let mainEl = document.getElementById('main-container');
-      mainEl.style.background = '#272727ef';
+      mainEl.style.background = CONFIG_SCRIPT['backgroundcolor'];
       mainEl.style.color = fontColor;
     }
 
@@ -823,7 +914,7 @@
     function changeTitle(title = "") {
       let el = document.getElementById('title');
       el.style.backgroundColor = changeColorShade(bgColor, null);
-      el.innerHTML = `<h2 style="margin: 0; padding: 6px 0; text-transform: capitalize;">${title}</h2>`;
+      el.innerHTML = `<h2 style="margin: 0; padding: 6px 0; text-transform: uppercase;">${title}</h2>`;
     }
 
 
@@ -865,5 +956,5 @@
 
 
   </script>
-</body>
-</html>
+  </body>
+  </html>
