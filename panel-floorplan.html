@@ -160,7 +160,7 @@
     }
     #panel > div {
       position: absolute;
-      height: 50%;
+      height: calc(50% - 48px);
       top: 0;
       overflow: auto;
       width: 100%;
@@ -821,8 +821,8 @@
         let timestampKeys = Object.keys(timestampObjects);
         if (timestampKeys > CONFIG_ALERTS["number"]) {
           timestampKeys.length = CONFIG_ALERTS["number"];
+          timestampKeys.reverse();
         }
-        let i = 0;
         for (let i = 0; i < CONFIG_ALERTS["number"]; i++) {
           let timestampKey = timestampKeys[i];
           html += createAlertBlock(timestampObjects[timestampKey], timestampKey);

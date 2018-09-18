@@ -141,6 +141,7 @@
     var videoLabelList = [];
 
     let numberOfCameras = 0;
+    let libs = [];
 
     function createCameraList() {
       n.call("objectStatus.list", { export: false, query: { PlayerTypeName: 'video'}}, function(err,res) {
@@ -250,11 +251,13 @@
       let lib = new L.VideoWin.Lib();
       lib.initialize(element);
       lib.updateVideo(camObjectName);
+      libs.push(lib);
     }
 
     function hideButton(e) {
       let closeButton = this.querySelector('.close');
       closeButton.style.display = 'none';
+
     }
 
     function showButton(e) {
@@ -321,6 +324,13 @@
     }
 
     main();
+
+
+    window.onclose = function() {
+      libs.forEach(lib => {
+        lib.destroy();
+      });
+    }
 
   </script>
 </div>
